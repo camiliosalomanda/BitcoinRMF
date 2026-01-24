@@ -1,0 +1,10 @@
+{
+  "name": "sean-api-gateway",
+  "version": "1.0.0",
+  "description": "Central API gateway for all Sean's apps",
+  "private": true,
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  }
+}
