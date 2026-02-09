@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -16,37 +15,31 @@ import StarCounter from '../components/StarCounter';
 import AdBanner from '../components/AdBanner';
 import UpgradeModal from '../components/UpgradeModal';
 
-const { width } = Dimensions.get('window');
+const getTimeBasedGreeting = (): { greeting: string; message: string } => {
+  const hour = new Date().getHours();
+  if (hour < 12) {
+    return { greeting: 'Good Morning!', message: "Rise and shine! Ready to create something cozy? ☀️" };
+  } else if (hour < 17) {
+    return { greeting: 'Good Afternoon!', message: "Perfect time for some crafty fun! 🧶" };
+  }
+  return { greeting: 'Good Evening!', message: "Evening crafts are the best crafts! 🌙" };
+};
 
 export default function HomeScreen() {
   const { isPro } = usePro();
   const [totalStars, setTotalStars] = useState(0);
-  const [greeting, setGreeting] = useState('');
-  const [woollyMessage, setWoollyMessage] = useState('');
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  // Compute once on mount — no state needed for static time-of-day values
+  const { greeting, message: woollyMessage } = useMemo(getTimeBasedGreeting, []);
 
   useEffect(() => {
     loadUserData();
-    setTimeBasedGreeting();
   }, []);
 
   const loadUserData = async () => {
     const progress = await getUserProgress();
     setTotalStars(progress.totalStars);
-  };
-
-  const setTimeBasedGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) {
-      setGreeting('Good Morning!');
-      setWoollyMessage("Rise and shine! Ready to create something cozy? ☀️");
-    } else if (hour < 17) {
-      setGreeting('Good Afternoon!');
-      setWoollyMessage("Perfect time for some crafty fun! 🧶");
-    } else {
-      setGreeting('Good Evening!');
-      setWoollyMessage("Evening crafts are the best crafts! 🌙");
-    }
   };
 
   return (

@@ -24,6 +24,13 @@ import WoollyMascot from '../components/WoollyMascot';
 import AdBanner from '../components/AdBanner';
 import UpgradeModal from '../components/UpgradeModal';
 
+// Image quality for picker (0-1). Lower = smaller upload, faster API calls.
+// 0.3 balances quality for AI pattern recognition vs. memory usage.
+const IMAGE_PICKER_QUALITY = 0.3;
+
+// Milliseconds between rotating loading messages during pattern generation
+const LOADING_MESSAGE_INTERVAL_MS = 2000;
+
 const IDEA_SUGGESTIONS = [
   { emoji: '🐻', text: 'A cute teddy bear' },
   { emoji: '🌸', text: 'A flower for mom' },
@@ -72,7 +79,7 @@ export default function CreateScreen() {
       mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 0.3,
+      quality: IMAGE_PICKER_QUALITY,
       base64: true,
     });
 
@@ -100,7 +107,7 @@ export default function CreateScreen() {
     const result = await ImagePicker.launchCameraAsync({
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 0.3,
+      quality: IMAGE_PICKER_QUALITY,
       base64: true,
     });
 
@@ -140,30 +147,29 @@ export default function CreateScreen() {
     const messageInterval = setInterval(() => {
       messageIndex = (messageIndex + 1) % messages.length;
       setLoadingMessage(messages[messageIndex]);
-    }, 2000);
+    }, LOADING_MESSAGE_INTERVAL_MS);
 
     try {
       let pattern;
-      
+
       if (imageBase64 && isPro) {
         pattern = await generatePatternFromImage(imageBase64, idea);
       } else {
         pattern = await generatePattern(idea);
       }
-      
+
       await savePattern(pattern);
-      
-      clearInterval(messageInterval);
+
       setIsLoading(false);
-      
+
       router.replace({
         pathname: '/pattern',
         params: { patternId: pattern.id },
       });
-    } catch (error) {
-      console.error('Pattern generation error:', error);
-      clearInterval(messageInterval);
-      
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Pattern generation error:', message);
+
       Alert.alert(
         'Hmm...',
         'Woolly had trouble connecting. Want to use a practice pattern instead?',
@@ -187,6 +193,8 @@ export default function CreateScreen() {
           },
         ]
       );
+    } finally {
+      clearInterval(messageInterval);
     }
   };
 
@@ -312,9 +320,9 @@ export default function CreateScreen() {
               <View style={styles.suggestionsSection}>
                 <Text style={styles.suggestionsTitle}>💡 Need ideas? Try these!</Text>
                 <View style={styles.suggestionsGrid}>
-                  {IDEA_SUGGESTIONS.map((suggestion, index) => (
+                  {IDEA_SUGGESTIONS.map((suggestion) => (
                     <TouchableOpacity
-                      key={index}
+                      key={`${suggestion.emoji}-${suggestion.text}`}
                       style={styles.suggestionChip}
                       onPress={() => handleSuggestionPress(suggestion.text)}
                       activeOpacity={0.7}

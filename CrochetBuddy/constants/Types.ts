@@ -62,22 +62,3 @@ export interface UserProgress {
   savedPatterns: PatternData[];
 }
 
-// User & Subscription Types
-export interface User {
-  id: string;
-  email: string;
-  displayName?: string;
-  createdAt: string;
-  isPro: boolean;
-  subscriptionExpiry?: string;
-}
-
-export interface SubscriptionPlan {
-  id: string;
-  name: string;
-  price: string;
-  period: 'monthly' | 'yearly' | 'lifetime';
-  features: string[];
-}
-
-export type SubscriptionStatus = 'free' | 'pro' | 'expired';

@@ -9,31 +9,54 @@ interface MaterialCardProps {
 }
 
 // Affiliate link configuration
-// Replace these with your actual affiliate links/IDs
 const AFFILIATE_CONFIG = {
-  // Amazon Associates
-  amazonTag: 'crochetbuddy-20', // Your Amazon affiliate tag
-  
-  // Craft store affiliates (examples)
-  joannTag: 'crochetbuddy',
-  michaelsTag: 'crochetbuddy',
+  amazonTag: 'crochetbuddy-20',
+};
+
+// Trusted domains for affiliate links
+const TRUSTED_DOMAINS = [
+  'amazon.com',
+  'www.amazon.com',
+  'joann.com',
+  'www.joann.com',
+  'michaels.com',
+  'www.michaels.com',
+];
+
+// Validate that a URL points to a trusted domain
+const isUrlTrusted = (url: string): boolean => {
+  try {
+    // Basic URL parsing — full URL API not available in all RN environments
+    const match = url.match(/^https:\/\/([^/]+)/);
+    if (!match) return false;
+    const hostname = match[1].toLowerCase();
+    return TRUSTED_DOMAINS.some(domain => hostname === domain || hostname.endsWith('.' + domain));
+  } catch {
+    return false;
+  }
 };
 
 // Generate affiliate URL based on material type
 const getAffiliateUrl = (material: Material): string => {
-  const searchTerm = encodeURIComponent(`${material.item} ${material.details}`);
-  
-  // Default to Amazon search with affiliate tag
-  // In production, you'd want more specific product links
+  const searchTerm = encodeURIComponent(
+    `${material.item} ${material.details}`.slice(0, 100)
+  );
   return `https://www.amazon.com/s?k=${searchTerm}&tag=${AFFILIATE_CONFIG.amazonTag}`;
 };
 
 export default function MaterialCard({ material }: MaterialCardProps) {
   const handleShopPress = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    
-    const url = material.affiliateUrl || getAffiliateUrl(material);
-    
+
+    // If the API response includes an affiliateUrl, validate it first
+    let url: string;
+    if (material.affiliateUrl && isUrlTrusted(material.affiliateUrl)) {
+      url = material.affiliateUrl;
+    } else {
+      // Fall back to generating a safe Amazon URL ourselves
+      url = getAffiliateUrl(material);
+    }
+
     try {
       const canOpen = await Linking.canOpenURL(url);
       if (canOpen) {
@@ -41,8 +64,8 @@ export default function MaterialCard({ material }: MaterialCardProps) {
       } else {
         Alert.alert('Oops!', 'Could not open the shop link.');
       }
-    } catch (error) {
-      console.error('Error opening affiliate link:', error);
+    } catch (error: unknown) {
+      console.error('Error opening affiliate link:', error instanceof Error ? error.message : error);
       Alert.alert('Oops!', 'Something went wrong. Please try again.');
     }
   };
@@ -82,7 +105,7 @@ export function MaterialsList({ materials }: MaterialsListProps) {
       </View>
       
       {materials.map((material, index) => (
-        <MaterialCard key={index} material={material} />
+        <MaterialCard key={`${material.item}-${index}`} material={material} />
       ))}
     </View>
   );

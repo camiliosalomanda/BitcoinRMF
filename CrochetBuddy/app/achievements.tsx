@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,25 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../constants/Colors';
 import { Achievement, UserProgress } from '../constants/Types';
 import { getUserProgress } from '../utils/storage';
+
+const getProgressForAchievement = (progress: UserProgress, achievement: Achievement): number => {
+  let current = 0;
+  switch (achievement.requirement.type) {
+    case 'patterns_completed':
+      current = progress.patternsCompleted;
+      break;
+    case 'stars_earned':
+      current = progress.totalStars;
+      break;
+    case 'streak_days':
+      current = progress.currentStreak;
+      break;
+    case 'steps_completed':
+      current = progress.stepsCompleted;
+      break;
+  }
+  return Math.min(current / achievement.requirement.count, 1);
+};
 
 export default function AchievementsScreen() {
   const [progress, setProgress] = useState<UserProgress | null>(null);
@@ -22,27 +41,15 @@ export default function AchievementsScreen() {
     setProgress(data);
   };
 
-  const getProgressForAchievement = (achievement: Achievement): number => {
-    if (!progress) return 0;
-    
-    let current = 0;
-    switch (achievement.requirement.type) {
-      case 'patterns_completed':
-        current = progress.patternsCompleted;
-        break;
-      case 'stars_earned':
-        current = progress.totalStars;
-        break;
-      case 'streak_days':
-        current = progress.currentStreak;
-        break;
-      case 'steps_completed':
-        current = progress.stepsCompleted;
-        break;
+  // Pre-compute all achievement progress once when progress data changes
+  const achievementProgresses = useMemo(() => {
+    if (!progress) return new Map<string, number>();
+    const map = new Map<string, number>();
+    for (const a of progress.achievements) {
+      map.set(a.id, getProgressForAchievement(progress, a));
     }
-    
-    return Math.min(current / achievement.requirement.count, 1);
-  };
+    return map;
+  }, [progress]);
 
   if (!progress) {
     return (
@@ -96,7 +103,7 @@ export default function AchievementsScreen() {
         <Text style={styles.sectionTitle}>🏆 All Achievements</Text>
         
         {progress.achievements.map((achievement) => {
-          const progressPercent = getProgressForAchievement(achievement);
+          const progressPercent = achievementProgresses.get(achievement.id) ?? 0;
           const isUnlocked = achievement.unlocked;
           
           return (

@@ -62,45 +62,46 @@ export default function UpgradeModal({ visible, onClose, onSuccess }: UpgradeMod
 
     try {
       // ===========================================
-      // IN PRODUCTION: Replace this with real IAP
-      // ===========================================
-      // 
-      // Using expo-in-app-purchases:
-      // 
-      // import * as InAppPurchases from 'expo-in-app-purchases';
-      // 
-      // await InAppPurchases.connectAsync();
-      // const { results } = await InAppPurchases.getProductsAsync([selectedPlan]);
-      // await InAppPurchases.purchaseItemAsync(selectedPlan);
-      // 
-      // Listen for purchase completion:
-      // InAppPurchases.setPurchaseListener(({ responseCode, results }) => {
-      //   if (responseCode === InAppPurchases.IAPResponseCode.OK) {
-      //     upgradeToPro();
-      //   }
-      // });
+      // TODO: Replace with real IAP before submission
+      //
+      // 1. npx expo install expo-in-app-purchases
+      // 2. import * as InAppPurchases from 'expo-in-app-purchases';
+      // 3. await InAppPurchases.connectAsync();
+      // 4. const { results } = await InAppPurchases.getProductsAsync([selectedPlan]);
+      // 5. await InAppPurchases.purchaseItemAsync(selectedPlan);
+      // 6. InAppPurchases.setPurchaseListener(({ responseCode, results }) => {
+      //      if (responseCode === InAppPurchases.IAPResponseCode.OK) {
+      //        const receipt = JSON.stringify(results);
+      //        upgradeToPro(receipt);
+      //      }
+      //    });
       // ===========================================
 
-      // Simulated purchase delay (remove in production)
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Mark as Pro (in production, only call after verified purchase)
-      await upgradeToPro();
-      
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert(
-        '🎉 Welcome to Pro!',
-        'You now have access to all premium features. Enjoy!',
-        [{ 
-          text: 'Awesome!', 
-          onPress: () => {
-            onSuccess?.();
-            onClose();
-          }
-        }]
-      );
-    } catch (error) {
-      Alert.alert('Error', 'Purchase failed. Please try again.');
+      // Development only: show a warning that real IAP is not configured
+      if (__DEV__) {
+        await upgradeToPro('dev-test-receipt');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Alert.alert(
+          'DEV MODE',
+          'Pro activated for testing. Real IAP must be configured before submission.',
+          [{
+            text: 'OK',
+            onPress: () => {
+              onSuccess?.();
+              onClose();
+            }
+          }]
+        );
+      } else {
+        // In production builds, show "coming soon" until real IAP is integrated
+        Alert.alert(
+          'Coming Soon',
+          'In-app purchases are being set up. Please check back soon!',
+        );
+      }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Purchase failed';
+      Alert.alert('Error', `${message}. Please try again.`);
     } finally {
       setIsLoading(false);
     }

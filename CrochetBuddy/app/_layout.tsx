@@ -1,9 +1,11 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ProProvider } from '../hooks/usePro';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 export default function RootLayout() {
   return (
+    <ErrorBoundary>
     <ProProvider>
       <StatusBar style="dark" />
       <Stack
@@ -49,5 +51,6 @@ export default function RootLayout() {
         />
       </Stack>
     </ProProvider>
+    </ErrorBoundary>
   );
 }

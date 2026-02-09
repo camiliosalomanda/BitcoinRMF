@@ -60,8 +60,8 @@ export default function StepCard({
               {step.stitches.length > 0 && (
                 <View style={styles.stitchesContainer}>
                   {step.stitches.map((stitch, index) => (
-                    <View 
-                      key={index}
+                    <View
+                      key={`${stitch.abbreviation}-${index}`}
                       style={[
                         styles.stitchTag,
                         { backgroundColor: (StitchColors[stitch.fullName.replace(' ', '_')] || Colors.blue) + '30' }

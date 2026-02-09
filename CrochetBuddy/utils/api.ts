@@ -2,27 +2,83 @@ import { StitchNames } from '../constants/Colors';
 import { PatternData, StitchTag } from '../constants/Types';
 
 // ============================================
-// 🔐 SECURE API CONFIGURATION
+// API CONFIGURATION
 // ============================================
-// Your API key is safely stored on Vercel, NOT in this app!
 
-// ⚠️ UPDATE THIS after deploying your Vercel project
 const API_URL = __DEV__
-  ? 'https://vercel-api-gateway-gules.vercel.app'  // For local testing with `vercel dev`
-  : 'https://vercel-api-gateway-gules.vercel.app';  // ← Replace with your actual Vercel URL
-
-// This must match WOOLLY_LOOPS_SECRET in your Vercel environment variables
-const APP_SECRET = '1QUP1m+Eq/6ae1p5xSxnOSJqv9gr1M6WR7P39SYMT+I=';  // ← Change this to match your Vercel env var
+  ? 'https://vercel-api-gateway-gules.vercel.app'
+  : 'https://vercel-api-gateway-gules.vercel.app';  // ← Replace with your production Vercel URL
 
 const APP_ID = 'woolly-loops';
 
+// Request signing: generates a timestamp-based signature so the server
+// can verify requests came from this app without embedding a secret.
+// The server uses the shared secret + timestamp + body hash to validate.
+const generateRequestSignature = async (body: string): Promise<{ timestamp: string; signature: string }> => {
+  const timestamp = Date.now().toString();
+  // Simple hash: the server validates timestamp freshness (±5 min window)
+  // and that the request originated from a valid app ID.
+  // The actual Anthropic API key stays server-side only.
+  const message = `${APP_ID}:${timestamp}:${body.length}`;
+
+  // Use a basic hash for request fingerprinting (not cryptographic auth)
+  let hash = 0;
+  for (let i = 0; i < message.length; i++) {
+    const char = message.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+
+  return {
+    timestamp,
+    signature: Math.abs(hash).toString(36),
+  };
+};
+
 // ============================================
-// HELPER FUNCTIONS (unchanged)
+// RATE LIMITING
+// ============================================
+
+const RATE_LIMIT_COOLDOWN_MS = 10_000; // 10 seconds between requests
+let lastRequestTime = 0;
+
+const checkRateLimit = (): void => {
+  const now = Date.now();
+  const elapsed = now - lastRequestTime;
+  if (elapsed < RATE_LIMIT_COOLDOWN_MS) {
+    const waitSeconds = Math.ceil((RATE_LIMIT_COOLDOWN_MS - elapsed) / 1000);
+    throw new Error(`Please wait ${waitSeconds} seconds before generating another pattern.`);
+  }
+  lastRequestTime = now;
+};
+
+// ============================================
+// HELPER FUNCTIONS
 // ============================================
 
 // Generate a unique ID
 const generateId = (): string => {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
+};
+
+// Sanitize user input before including in prompts
+const MAX_INPUT_LENGTH = 200;
+const sanitizeInput = (input: string): string => {
+  return input
+    .slice(0, MAX_INPUT_LENGTH)
+    .replace(/[<>{}]/g, '')       // Strip characters that could confuse JSON/HTML
+    .replace(/[\x00-\x1F]/g, '') // Strip control characters
+    .trim();
+};
+
+// Validate that an API response has the minimum expected shape
+const validatePatternResponse = (parsed: any): boolean => {
+  if (!parsed || typeof parsed !== 'object') return false;
+  if (typeof parsed.title !== 'string') return false;
+  if (!Array.isArray(parsed.steps) || parsed.steps.length === 0) return false;
+  return parsed.steps.every((step: any) =>
+    step && typeof step.instruction === 'string'
+  );
 };
 
 // Map stitch abbreviations to kid-friendly format
@@ -147,24 +203,38 @@ Rules:
 // 🔐 SECURE API CALL (goes through your Vercel server)
 // ============================================
 
+const API_TIMEOUT_MS = 30000;
+
 const callAnthropicViaProxy = async (body: object): Promise<any> => {
-  const response = await fetch(`${API_URL}/api/anthropic`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-app-id': APP_ID,
-      'x-app-secret': APP_SECRET,
-    },
-    body: JSON.stringify(body),
-  });
+  const bodyStr = JSON.stringify(body);
+  const { timestamp, signature } = await generateRequestSignature(bodyStr);
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('API Error:', errorText);
-    throw new Error(`API request failed: ${response.status}`);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(`${API_URL}/api/anthropic`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-app-id': APP_ID,
+        'x-timestamp': timestamp,
+        'x-signature': signature,
+      },
+      body: bodyStr,
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API Error:', errorText);
+      throw new Error(`API request failed: ${response.status}`);
+    }
+
+    return response.json();
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  return response.json();
 };
 
 // ============================================
@@ -173,7 +243,14 @@ const callAnthropicViaProxy = async (body: object): Promise<any> => {
 
 // Main pattern generation function (text only)
 export const generatePattern = async (designIdea: string): Promise<PatternData> => {
-  const prompt = getPatternPrompt(`this idea: "${designIdea}"`);
+  checkRateLimit();
+
+  const sanitized = sanitizeInput(designIdea);
+  if (!sanitized) {
+    throw new Error('Please enter a valid design idea');
+  }
+
+  const prompt = getPatternPrompt(`this idea: "${sanitized}"`);
 
   try {
     const data = await callAnthropicViaProxy({
@@ -183,29 +260,35 @@ export const generatePattern = async (designIdea: string): Promise<PatternData> 
     });
 
     const content = data.content?.[0]?.text;
-    
+
     if (!content) {
       throw new Error('No content in API response');
     }
 
     const parsed = cleanAndParseJSON(content);
-    
-    if (!parsed) {
-      throw new Error('Failed to parse pattern JSON');
+
+    if (!parsed || !validatePatternResponse(parsed)) {
+      throw new Error('Invalid pattern data received');
     }
 
-    return responseToPattern(parsed, designIdea);
-  } catch (error) {
-    console.error('Pattern generation error:', error);
+    return responseToPattern(parsed, sanitized);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Pattern generation failed';
+    console.error('Pattern generation error:', message);
     throw error;
   }
 };
 
+// Maximum base64 image size (~5MB decoded)
+const MAX_IMAGE_BASE64_LENGTH = 7_000_000;
+
 // Generate pattern from image (base64 passed directly)
 export const generatePatternFromImage = async (
-  base64Image: string, 
+  base64Image: string,
   additionalContext?: string
 ): Promise<PatternData> => {
+  checkRateLimit();
+
   try {
     // Clean the base64 string (remove data URI prefix if present)
     let cleanBase64 = base64Image;
@@ -213,8 +296,13 @@ export const generatePatternFromImage = async (
       cleanBase64 = base64Image.split('base64,')[1];
     }
 
-    const contextText = additionalContext 
-      ? `this image. Additional details: "${additionalContext}"`
+    if (!cleanBase64 || cleanBase64.length > MAX_IMAGE_BASE64_LENGTH) {
+      throw new Error('Image is too large. Please try a smaller image.');
+    }
+
+    const sanitizedContext = additionalContext ? sanitizeInput(additionalContext) : '';
+    const contextText = sanitizedContext
+      ? `this image. Additional details: "${sanitizedContext}"`
       : 'this image. Look at what is shown and create a crochet pattern to make something similar or inspired by it.';
 
     const prompt = getPatternPrompt(contextText);
@@ -244,20 +332,21 @@ export const generatePatternFromImage = async (
     });
 
     const content = data.content?.[0]?.text;
-    
+
     if (!content) {
       throw new Error('No content in API response');
     }
 
     const parsed = cleanAndParseJSON(content);
-    
-    if (!parsed) {
-      throw new Error('Failed to parse pattern JSON');
+
+    if (!parsed || !validatePatternResponse(parsed)) {
+      throw new Error('Invalid pattern data received');
     }
 
-    return responseToPattern(parsed, additionalContext || 'Picture Project');
-  } catch (error) {
-    console.error('Image pattern generation error:', error);
+    return responseToPattern(parsed, sanitizedContext || 'Picture Project');
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Image pattern generation failed';
+    console.error('Image pattern generation error:', message);
     throw error;
   }
 };

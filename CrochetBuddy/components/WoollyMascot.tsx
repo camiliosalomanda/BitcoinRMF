@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Animated, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { Colors } from '../constants/Colors';
 
 interface WoollyMascotProps {
@@ -10,43 +10,41 @@ interface WoollyMascotProps {
 
 const { width } = Dimensions.get('window');
 
-export default function WoollyMascot({ 
-  message, 
+// Horizontal padding subtracted from screen width per size variant
+const BUBBLE_PADDING: Record<string, number> = {
+  small: 120,  // Narrow bubble alongside small mascot
+  medium: 80,
+  large: 60,   // Wide bubble for prominent display
+};
+
+const EMOJI_SIZE: Record<string, number> = {
+  small: 40,
+  medium: 60,
+  large: 80,
+};
+
+const EMOTION_EMOJI: Record<string, string> = {
+  happy: '🐑',
+  excited: '🐑✨',
+  thinking: '🐑💭',
+  celebrating: '🐑🎉',
+};
+
+export default function WoollyMascot({
+  message,
   emotion = 'happy',
-  size = 'medium' 
+  size = 'medium'
 }: WoollyMascotProps) {
-  const getEmoji = (): string => {
-    switch (emotion) {
-      case 'happy': return '🐑';
-      case 'excited': return '🐑✨';
-      case 'thinking': return '🐑💭';
-      case 'celebrating': return '🐑🎉';
-      default: return '🐑';
-    }
-  };
-
-  const getEmojiSize = (): number => {
-    switch (size) {
-      case 'small': return 40;
-      case 'large': return 80;
-      default: return 60;
-    }
-  };
-
-  const getBubbleWidth = (): number => {
-    switch (size) {
-      case 'small': return width - 120;
-      case 'large': return width - 60;
-      default: return width - 80;
-    }
-  };
+  const emojiSize = EMOJI_SIZE[size] ?? EMOJI_SIZE.medium;
+  const bubbleWidth = width - (BUBBLE_PADDING[size] ?? BUBBLE_PADDING.medium);
+  const emoji = EMOTION_EMOJI[emotion] ?? EMOTION_EMOJI.happy;
 
   return (
     <View style={[styles.container, size === 'small' && styles.containerSmall]}>
       <View style={styles.woollyContainer}>
         <View style={styles.woollyBody}>
-          <Text style={[styles.woollyEmoji, { fontSize: getEmojiSize() }]}>
-            {getEmoji()}
+          <Text style={[styles.woollyEmoji, { fontSize: emojiSize }]}>
+            {emoji}
           </Text>
         </View>
         <View style={styles.yarnDecor}>
@@ -54,7 +52,7 @@ export default function WoollyMascot({
         </View>
       </View>
 
-      <View style={[styles.speechBubble, { maxWidth: getBubbleWidth() }]}>
+      <View style={[styles.speechBubble, { maxWidth: bubbleWidth }]}>
         <View style={styles.bubbleArrow} />
         <Text style={[styles.messageText, size === 'large' && styles.messageLarge]}>
           {message}

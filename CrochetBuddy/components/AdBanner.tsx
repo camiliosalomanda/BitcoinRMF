@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { usePro } from '../hooks/usePro';
@@ -8,10 +8,34 @@ interface AdBannerProps {
   onUpgradePress?: () => void;
 }
 
-// Kid-friendly ad placeholders
-// In production, replace with actual AdMob integration:
-// import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
+// ===========================================
+// COPPA COMPLIANCE CONFIGURATION
+// ===========================================
+// These settings MUST be applied when switching to real AdMob:
+//
+// 1. In Google AdMob dashboard:
+//    - Set "max_ad_content_rating" to "G"
+//    - Enable "Tag for child-directed treatment" (COPPA)
+//    - Enable "Tag for users under the age of consent" (GDPR)
+//
+// 2. In code (BannerAd requestOptions):
+//    - requestNonPersonalizedAdsOnly: true
+//    - keywords: ['games', 'kids', 'crafts', 'art']
+//
+// 3. In app.json AdMob plugin config:
+//    - Use your real AdMob App IDs
+//
+// See: https://developers.google.com/admob/android/targeting#child-directed_setting
+// ===========================================
+export const COPPA_AD_CONFIG = {
+  requestNonPersonalizedAdsOnly: true,
+  keywords: ['games', 'kids', 'crafts', 'art'],
+  maxAdContentRating: 'G',
+  tagForChildDirectedTreatment: true,
+  tagForUnderAgeOfConsent: true,
+} as const;
 
+// Kid-friendly placeholder ads (used until real AdMob is configured)
 const KID_FRIENDLY_ADS = [
   {
     emoji: '🎮',
@@ -42,13 +66,33 @@ const KID_FRIENDLY_ADS = [
 export default function AdBanner({ placement = 'bottom', onUpgradePress }: AdBannerProps) {
   const { isPro } = usePro();
 
+  // Memoize ad selection so it doesn't change on every render
+  const ad = useMemo(
+    () => KID_FRIENDLY_ADS[Math.floor(Math.random() * KID_FRIENDLY_ADS.length)],
+    []
+  );
+
   // Don't show ads to Pro users
   if (isPro) {
     return null;
   }
 
-  // Random kid-friendly ad
-  const ad = KID_FRIENDLY_ADS[Math.floor(Math.random() * KID_FRIENDLY_ADS.length)];
+  // ===========================================
+  // PRODUCTION: Replace placeholder with real AdMob:
+  //
+  // import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
+  //
+  // const adUnitId = __DEV__ ? TestIds.BANNER : 'ca-app-pub-xxxxx/xxxxx';
+  //
+  // <BannerAd
+  //   unitId={adUnitId}
+  //   size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+  //   requestOptions={{
+  //     requestNonPersonalizedAdsOnly: COPPA_AD_CONFIG.requestNonPersonalizedAdsOnly,
+  //     keywords: COPPA_AD_CONFIG.keywords,
+  //   }}
+  // />
+  // ===========================================
 
   return (
     <View style={[styles.container, placement === 'inline' && styles.containerInline]}>
@@ -62,7 +106,7 @@ export default function AdBanner({ placement = 'bottom', onUpgradePress }: AdBan
           <Text style={styles.adBadgeText}>Ad</Text>
         </View>
       </View>
-      
+
       {/* Remove ads prompt */}
       <TouchableOpacity style={styles.removeAdsButton} onPress={onUpgradePress}>
         <Text style={styles.removeAdsText}>✨ Remove ads</Text>
@@ -70,45 +114,6 @@ export default function AdBanner({ placement = 'bottom', onUpgradePress }: AdBan
     </View>
   );
 }
-
-// Instructions for real AdMob integration:
-/*
-1. Install: npx expo install react-native-google-mobile-ads
-
-2. Add to app.json:
-{
-  "expo": {
-    "plugins": [
-      [
-        "react-native-google-mobile-ads",
-        {
-          "androidAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx",
-          "iosAppId": "ca-app-pub-xxxxxxxx~xxxxxxxx"
-        }
-      ]
-    ]
-  }
-}
-
-3. Replace the component with:
-import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
-
-const adUnitId = __DEV__ ? TestIds.BANNER : 'ca-app-pub-xxxxx/xxxxx';
-
-<BannerAd
-  unitId={adUnitId}
-  size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
-  requestOptions={{
-    requestNonPersonalizedAdsOnly: true, // Required for kids apps (COPPA)
-    keywords: ['games', 'kids', 'crafts', 'art'], // Kid-friendly targeting
-  }}
-/>
-
-4. For COPPA compliance (required for kids apps):
-- Set "max_ad_content_rating" to "G" in AdMob dashboard
-- Enable "Tag for child-directed treatment"
-- Use only non-personalized ads
-*/
 
 const styles = StyleSheet.create({
   container: {

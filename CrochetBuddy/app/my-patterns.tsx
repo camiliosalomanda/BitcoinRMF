@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
+  FlatList,
   TouchableOpacity,
   Alert,
-  RefreshControl,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -15,6 +14,82 @@ import { Colors } from '../constants/Colors';
 import { PatternData } from '../constants/Types';
 import { getSavedPatterns, deletePattern } from '../utils/storage';
 import WoollyMascot from '../components/WoollyMascot';
+
+const getDifficultyColor = (difficulty: string): string => {
+  switch (difficulty) {
+    case 'Easy Peasy': return Colors.green;
+    case 'A Little Tricky': return Colors.yellow;
+    case 'Challenge Mode': return Colors.orange;
+    default: return Colors.blue;
+  }
+};
+
+const getProgressPercent = (pattern: PatternData): number => {
+  if (pattern.steps.length === 0) return 0;
+  return Math.round((pattern.completedSteps / pattern.steps.length) * 100);
+};
+
+const PatternCard = React.memo(function PatternCard({
+  pattern,
+  onPress,
+  onLongPress,
+}: {
+  pattern: PatternData;
+  onPress: () => void;
+  onLongPress: () => void;
+}) {
+  const progress = getProgressPercent(pattern);
+  const diffColor = getDifficultyColor(pattern.difficulty);
+
+  return (
+    <TouchableOpacity
+      style={styles.patternCard}
+      onPress={onPress}
+      onLongPress={onLongPress}
+      activeOpacity={0.8}
+    >
+      <View style={styles.cardHeader}>
+        <Text style={styles.patternTitle} numberOfLines={1}>
+          {pattern.title}
+        </Text>
+        {pattern.isComplete && (
+          <Text style={styles.completeEmoji}>✅</Text>
+        )}
+      </View>
+
+      <Text style={styles.patternDescription} numberOfLines={2}>
+        {pattern.description}
+      </Text>
+
+      <View style={styles.cardMeta}>
+        <View
+          style={[
+            styles.difficultyBadge,
+            { backgroundColor: diffColor + '30' }
+          ]}
+        >
+          <Text style={[styles.difficultyText, { color: diffColor }]}>
+            {pattern.difficulty}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.progressContainer}>
+        <View style={styles.progressBar}>
+          <View style={[styles.progressFill, { width: `${progress}%` }]} />
+        </View>
+        <Text style={styles.progressText}>{progress}%</Text>
+      </View>
+
+      <View style={styles.cardFooter}>
+        <Text style={styles.stepsText}>
+          {pattern.completedSteps}/{pattern.steps.length} steps
+        </Text>
+        <Text style={styles.starsText}>⭐ {pattern.totalStars}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+});
 
 export default function MyPatternsScreen() {
   const [patterns, setPatterns] = useState<PatternData[]>([]);
@@ -29,21 +104,21 @@ export default function MyPatternsScreen() {
     setPatterns(saved);
   };
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadPatterns();
     setRefreshing(false);
-  };
+  }, []);
 
-  const handlePatternPress = (pattern: PatternData) => {
+  const handlePatternPress = useCallback((pattern: PatternData) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push({
       pathname: '/pattern',
       params: { patternId: pattern.id },
     });
-  };
+  }, []);
 
-  const handleDeletePattern = (pattern: PatternData) => {
+  const handleDeletePattern = useCallback((pattern: PatternData) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(
       'Delete Pattern?',
@@ -60,21 +135,17 @@ export default function MyPatternsScreen() {
         },
       ]
     );
-  };
+  }, []);
 
-  const getDifficultyColor = (difficulty: string): string => {
-    switch (difficulty) {
-      case 'Easy Peasy': return Colors.green;
-      case 'A Little Tricky': return Colors.yellow;
-      case 'Challenge Mode': return Colors.orange;
-      default: return Colors.blue;
-    }
-  };
+  const renderPattern = useCallback(({ item }: { item: PatternData }) => (
+    <PatternCard
+      pattern={item}
+      onPress={() => handlePatternPress(item)}
+      onLongPress={() => handleDeletePattern(item)}
+    />
+  ), [handlePatternPress, handleDeletePattern]);
 
-  const getProgressPercent = (pattern: PatternData): number => {
-    if (pattern.steps.length === 0) return 0;
-    return Math.round((pattern.completedSteps / pattern.steps.length) * 100);
-  };
+  const keyExtractor = useCallback((item: PatternData) => item.id, []);
 
   if (patterns.length === 0) {
     return (
@@ -102,116 +173,59 @@ export default function MyPatternsScreen() {
     );
   }
 
+  const ListHeader = (
+    <View style={styles.statsHeader}>
+      <View style={styles.statItem}>
+        <Text style={styles.statNumber}>{patterns.length}</Text>
+        <Text style={styles.statLabel}>Patterns</Text>
+      </View>
+      <View style={styles.statDivider} />
+      <View style={styles.statItem}>
+        <Text style={styles.statNumber}>
+          {patterns.filter(p => p.isComplete).length}
+        </Text>
+        <Text style={styles.statLabel}>Completed</Text>
+      </View>
+      <View style={styles.statDivider} />
+      <View style={styles.statItem}>
+        <Text style={styles.statNumber}>
+          {patterns.reduce((sum, p) => sum + p.totalStars, 0)}
+        </Text>
+        <Text style={styles.statLabel}>⭐ Stars</Text>
+      </View>
+    </View>
+  );
+
+  const ListFooter = (
+    <View>
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={() => router.push('/create')}
+      >
+        <Text style={styles.addButtonText}>+ Create New Pattern</Text>
+      </TouchableOpacity>
+      <View style={{ height: 40 }} />
+    </View>
+  );
+
   return (
     <LinearGradient
       colors={['#FFF5F8', '#FFE5EC']}
       style={styles.container}
     >
-      <ScrollView
-        style={styles.scrollView}
+      <FlatList
+        data={patterns}
+        renderItem={renderPattern}
+        keyExtractor={keyExtractor}
+        ListHeaderComponent={ListHeader}
+        ListFooterComponent={ListFooter}
         contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        {/* Stats header */}
-        <View style={styles.statsHeader}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{patterns.length}</Text>
-            <Text style={styles.statLabel}>Patterns</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>
-              {patterns.filter(p => p.isComplete).length}
-            </Text>
-            <Text style={styles.statLabel}>Completed</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>
-              {patterns.reduce((sum, p) => sum + p.totalStars, 0)}
-            </Text>
-            <Text style={styles.statLabel}>⭐ Stars</Text>
-          </View>
-        </View>
-
-        {/* Pattern cards */}
-        {patterns.map((pattern) => (
-          <TouchableOpacity
-            key={pattern.id}
-            style={styles.patternCard}
-            onPress={() => handlePatternPress(pattern)}
-            onLongPress={() => handleDeletePattern(pattern)}
-            activeOpacity={0.8}
-          >
-            <View style={styles.cardHeader}>
-              <Text style={styles.patternTitle} numberOfLines={1}>
-                {pattern.title}
-              </Text>
-              {pattern.isComplete && (
-                <Text style={styles.completeEmoji}>✅</Text>
-              )}
-            </View>
-            
-            <Text style={styles.patternDescription} numberOfLines={2}>
-              {pattern.description}
-            </Text>
-            
-            <View style={styles.cardMeta}>
-              <View 
-                style={[
-                  styles.difficultyBadge,
-                  { backgroundColor: getDifficultyColor(pattern.difficulty) + '30' }
-                ]}
-              >
-                <Text 
-                  style={[
-                    styles.difficultyText,
-                    { color: getDifficultyColor(pattern.difficulty) }
-                  ]}
-                >
-                  {pattern.difficulty}
-                </Text>
-              </View>
-            </View>
-            
-            {/* Progress bar */}
-            <View style={styles.progressContainer}>
-              <View style={styles.progressBar}>
-                <View 
-                  style={[
-                    styles.progressFill,
-                    { width: `${getProgressPercent(pattern)}%` }
-                  ]}
-                />
-              </View>
-              <Text style={styles.progressText}>
-                {getProgressPercent(pattern)}%
-              </Text>
-            </View>
-            
-            <View style={styles.cardFooter}>
-              <Text style={styles.stepsText}>
-                {pattern.completedSteps}/{pattern.steps.length} steps
-              </Text>
-              <Text style={styles.starsText}>
-                ⭐ {pattern.totalStars}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        ))}
-        
-        {/* Create new button */}
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => router.push('/create')}
-        >
-          <Text style={styles.addButtonText}>+ Create New Pattern</Text>
-        </TouchableOpacity>
-        
-        <View style={{ height: 40 }} />
-      </ScrollView>
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+        initialNumToRender={8}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+      />
     </LinearGradient>
   );
 }
@@ -225,9 +239,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 32,
-  },
-  scrollView: {
-    flex: 1,
   },
   scrollContent: {
     padding: 16,

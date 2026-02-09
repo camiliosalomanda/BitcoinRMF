@@ -10,15 +10,23 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.woollyloops.app"
+      "bundleIdentifier": "com.woollyloops.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Woolly Loops uses your camera to take photos of things you want to turn into crochet patterns.",
+        "NSPhotoLibraryUsageDescription": "Woolly Loops uses your photos to create crochet patterns inspired by your pictures."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#FFE5EC",
-        "foregroundImage": "./assets/images/adaptive-icon.png"
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.woollyloops.app"
+      "package": "com.woollyloops.app",
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
     },
     "web": {
       "output": "static",

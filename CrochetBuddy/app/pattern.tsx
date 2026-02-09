@@ -25,12 +25,17 @@ export default function PatternScreen() {
   const { patternId } = useLocalSearchParams<{ patternId: string }>();
   const { isPro } = usePro();
   const [pattern, setPattern] = useState<PatternData | null>(null);
+  const [notFound, setNotFound] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [showMaterials, setShowMaterials] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
+    if (!patternId || typeof patternId !== 'string') {
+      setNotFound(true);
+      return;
+    }
     loadPattern();
   }, [patternId]);
 
@@ -41,6 +46,8 @@ export default function PatternScreen() {
       setPattern(found);
       const firstIncomplete = found.steps.findIndex(s => !s.isCompleted);
       setCurrentStep(firstIncomplete >= 0 ? firstIncomplete : 0);
+    } else {
+      setNotFound(true);
     }
   };
 
@@ -112,6 +119,21 @@ export default function PatternScreen() {
     }
   };
 
+  if (notFound) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={{ fontSize: 48, marginBottom: 16 }}>🐑</Text>
+        <Text style={styles.loadingText}>Pattern not found</Text>
+        <TouchableOpacity
+          style={{ marginTop: 20, padding: 14, backgroundColor: Colors.primary, borderRadius: 20 }}
+          onPress={() => router.replace('/')}
+        >
+          <Text style={{ color: '#fff', fontWeight: '600', fontSize: 16 }}>Go Home</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   if (!pattern) {
     return (
       <View style={styles.loadingContainer}>
@@ -173,7 +195,7 @@ export default function PatternScreen() {
         >
           {pattern.steps.map((step, index) => (
             <StepCard
-              key={index}
+              key={`step-${step.stepNumber}-${index}`}
               step={step}
               stepNumber={index + 1}
               isActive={currentStep === index}
