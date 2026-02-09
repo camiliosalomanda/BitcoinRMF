@@ -105,8 +105,8 @@ We may update this policy occasionally. Changes will be reflected in the "Last U
 
 If you have questions about this privacy policy, please contact us at:
 
-**Email**: [YOUR_EMAIL]
-**Website**: [YOUR_WEBSITE]
+**Email**: woollyloops@proton.me
+**Website**: https://vercel-api-gateway-gules.vercel.app/privacy.html
 
 ---
 
