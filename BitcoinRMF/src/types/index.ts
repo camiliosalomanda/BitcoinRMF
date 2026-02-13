@@ -210,3 +210,27 @@ export interface DashboardStats {
   mitigatedThreats: number;
   monitoringThreats: number;
 }
+
+// --- Comments & Feedback ---
+
+export type CommentTargetType = 'threat' | 'bip' | 'fud';
+
+export interface CommentAuthor {
+  xId: string;
+  xUsername: string;
+  xName: string;
+  xProfileImage: string;
+}
+
+export interface Comment {
+  id: string;
+  targetType: CommentTargetType;
+  targetId: string;
+  author: CommentAuthor;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  parentId: string | null;
+  likes: number;
+  likedBy: string[];
+}

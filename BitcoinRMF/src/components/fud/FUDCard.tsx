@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import { MessageSquare } from 'lucide-react';
 import { FUDAnalysis, FUDStatus } from '@/types';
+import { useRMFStore } from '@/lib/store';
 
 interface FUDCardProps {
   fud: FUDAnalysis;
@@ -21,6 +23,7 @@ function getValidityColor(score: number): string {
 }
 
 export default function FUDCard({ fud }: FUDCardProps) {
+  const commentCount = useRMFStore((s) => s.getCommentCount('fud', fud.id));
   const barColor = getValidityColor(fud.validityScore);
 
   return (
@@ -59,6 +62,12 @@ export default function FUDCard({ fud }: FUDCardProps) {
         <span>{fud.evidenceFor.length} supporting</span>
         <span>{fud.evidenceAgainst.length} debunking</span>
         <span>{fud.relatedThreats.length} linked threats</span>
+        {commentCount > 0 && (
+          <span className="flex items-center gap-0.5 ml-auto">
+            <MessageSquare size={10} />
+            {commentCount}
+          </span>
+        )}
       </div>
     </Link>
   );

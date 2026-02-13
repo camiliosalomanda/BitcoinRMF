@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import SeverityBadge from '@/components/SeverityBadge';
+import CommentSection from '@/components/comments/CommentSection';
 import { useRMFStore } from '@/lib/store';
 import { FUDStatus } from '@/types';
 import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
@@ -152,6 +153,9 @@ export default function FUDDetailPage() {
             )}
           </div>
         </div>
+
+        {/* Comments */}
+        <CommentSection targetType="fud" targetId={id} />
       </div>
     </DashboardLayout>
   );

@@ -3,6 +3,7 @@
 import { useParams } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import ThreatDetail from '@/components/threats/ThreatDetail';
+import CommentSection from '@/components/comments/CommentSection';
 import { useRMFStore } from '@/lib/store';
 
 export default function ThreatDetailPage() {
@@ -28,6 +29,9 @@ export default function ThreatDetailPage() {
   return (
     <DashboardLayout>
       <ThreatDetail threat={threat} />
+      <div className="mt-6">
+        <CommentSection targetType="threat" targetId={id} />
+      </div>
     </DashboardLayout>
   );
 }

@@ -10,6 +10,8 @@ import {
   RiskMatrixCell,
   DashboardStats,
   RiskRating,
+  Comment,
+  CommentTargetType,
 } from '@/types';
 import { buildRiskMatrix, getSeverityRating } from '@/lib/scoring';
 import { SEED_THREATS, SEED_BIPS, SEED_FUD } from '@/lib/seed-data';
@@ -44,6 +46,14 @@ interface RMFStore {
   // Initialization
   initializeSeedData: () => void;
 
+  // Comments
+  comments: Comment[];
+  addComment: (comment: Comment) => void;
+  deleteComment: (commentId: string, xId: string) => void;
+  likeComment: (commentId: string, xId: string) => void;
+  getCommentsByTarget: (targetType: CommentTargetType, targetId: string) => Comment[];
+  getCommentCount: (targetType: CommentTargetType, targetId: string) => number;
+
   // Computed
   getRiskMatrix: () => RiskMatrixCell[][];
   getDashboardStats: () => DashboardStats;
@@ -56,6 +66,7 @@ export const useRMFStore = create<RMFStore>()(
       threats: [],
       bips: [],
       fudAnalyses: [],
+      comments: [],
       isInitialized: false,
 
       // Threat CRUD
@@ -132,6 +143,42 @@ export const useRMFStore = create<RMFStore>()(
           ),
         })),
 
+      // Comments
+      addComment: (comment) =>
+        set((state) => ({ comments: [...state.comments, comment] })),
+
+      deleteComment: (commentId, xId) =>
+        set((state) => ({
+          comments: state.comments.filter(
+            (c) => !(c.id === commentId && c.author.xId === xId)
+          ),
+        })),
+
+      likeComment: (commentId, xId) =>
+        set((state) => ({
+          comments: state.comments.map((c) => {
+            if (c.id !== commentId) return c;
+            const alreadyLiked = c.likedBy.includes(xId);
+            return {
+              ...c,
+              likedBy: alreadyLiked
+                ? c.likedBy.filter((id) => id !== xId)
+                : [...c.likedBy, xId],
+              likes: alreadyLiked ? c.likes - 1 : c.likes + 1,
+            };
+          }),
+        })),
+
+      getCommentsByTarget: (targetType, targetId) =>
+        get().comments.filter(
+          (c) => c.targetType === targetType && c.targetId === targetId
+        ),
+
+      getCommentCount: (targetType, targetId) =>
+        get().comments.filter(
+          (c) => c.targetType === targetType && c.targetId === targetId
+        ).length,
+
       // Initialize with seed data
       initializeSeedData: () => {
         const state = get();
@@ -183,6 +230,7 @@ export const useRMFStore = create<RMFStore>()(
         threats: state.threats,
         bips: state.bips,
         fudAnalyses: state.fudAnalyses,
+        comments: state.comments,
         isInitialized: state.isInitialized,
       }),
     }

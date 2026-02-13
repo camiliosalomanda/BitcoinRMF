@@ -5,6 +5,7 @@ import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import ScoreGauge from '@/components/ScoreGauge';
 import SeverityBadge from '@/components/SeverityBadge';
+import CommentSection from '@/components/comments/CommentSection';
 import { useRMFStore } from '@/lib/store';
 import { BIPRecommendation } from '@/types';
 import { ArrowLeft } from 'lucide-react';
@@ -112,6 +113,9 @@ export default function BIPDetailPage() {
             )}
           </div>
         </div>
+
+        {/* Comments */}
+        <CommentSection targetType="bip" targetId={id} />
       </div>
     </DashboardLayout>
   );

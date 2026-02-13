@@ -14,6 +14,7 @@ import {
   X,
   Bitcoin,
 } from 'lucide-react';
+import SignInButton from '@/components/auth/SignInButton';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -108,6 +109,11 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
               );
             })}
           </nav>
+
+          {/* Auth */}
+          <div className="px-3 py-3 border-t border-white/5">
+            <SignInButton collapsed={!isOpen} />
+          </div>
 
           {/* Footer */}
           {isOpen && (

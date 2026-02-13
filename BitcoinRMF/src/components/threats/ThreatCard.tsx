@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import { MessageSquare } from 'lucide-react';
 import { Threat, LIKELIHOOD_LABELS, IMPACT_LABELS } from '@/types';
+import { useRMFStore } from '@/lib/store';
 import SeverityBadge from '@/components/SeverityBadge';
 import STRIDEBadge from '@/components/STRIDEBadge';
 import ThreatSourceBadge from '@/components/ThreatSourceBadge';
@@ -12,6 +14,8 @@ interface ThreatCardProps {
 }
 
 export default function ThreatCard({ threat }: ThreatCardProps) {
+  const commentCount = useRMFStore((s) => s.getCommentCount('threat', threat.id));
+
   return (
     <Link
       href={`/threats/${threat.id}`}
@@ -34,7 +38,15 @@ export default function ThreatCard({ threat }: ThreatCardProps) {
         <span>
           L: {threat.likelihood} ({LIKELIHOOD_LABELS[threat.likelihood]}) / I: {threat.impact} ({IMPACT_LABELS[threat.impact]})
         </span>
-        <span className="font-mono text-[#f7931a]">{threat.severityScore}/25</span>
+        <div className="flex items-center gap-2">
+          {commentCount > 0 && (
+            <span className="flex items-center gap-0.5 text-gray-500">
+              <MessageSquare size={10} />
+              {commentCount}
+            </span>
+          )}
+          <span className="font-mono text-[#f7931a]">{threat.severityScore}/25</span>
+        </div>
       </div>
     </Link>
   );

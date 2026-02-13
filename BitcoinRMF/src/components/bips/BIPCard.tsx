@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import { MessageSquare } from 'lucide-react';
 import { BIPEvaluation, BIPRecommendation } from '@/types';
+import { useRMFStore } from '@/lib/store';
 import ScoreGauge from '@/components/ScoreGauge';
 
 interface BIPCardProps {
@@ -17,6 +19,8 @@ const RECOMMENDATION_COLORS: Record<BIPRecommendation, string> = {
 };
 
 export default function BIPCard({ bip }: BIPCardProps) {
+  const commentCount = useRMFStore((s) => s.getCommentCount('bip', bip.id));
+
   return (
     <Link
       href={`/bips/${bip.id}`}
@@ -40,6 +44,12 @@ export default function BIPCard({ bip }: BIPCardProps) {
         <span>Threats: {bip.threatsAddressed.length}</span>
         <span>Adoption: {bip.adoptionPercentage}%</span>
         <span>Consensus: {bip.communityConsensus}%</span>
+        {commentCount > 0 && (
+          <span className="flex items-center gap-0.5">
+            <MessageSquare size={10} />
+            {commentCount}
+          </span>
+        )}
         <span className={`ml-auto px-1.5 py-0.5 rounded ${
           bip.status === 'ACTIVE' || bip.status === 'FINAL' ? 'bg-green-400/10 text-green-400' :
           bip.status === 'PROPOSED' ? 'bg-yellow-400/10 text-yellow-400' :

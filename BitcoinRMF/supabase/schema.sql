@@ -220,3 +220,40 @@ CREATE TRIGGER fud_analyses_updated_at BEFORE UPDATE ON fud_analyses
 
 CREATE TRIGGER users_updated_at BEFORE UPDATE ON users
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- ===========================================
+-- Comments & Feedback
+-- ===========================================
+CREATE TABLE IF NOT EXISTS comments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  target_type TEXT NOT NULL CHECK (target_type IN ('threat', 'bip', 'fud')),
+  target_id TEXT NOT NULL,
+  x_id TEXT NOT NULL,
+  x_username TEXT NOT NULL,
+  x_name TEXT NOT NULL,
+  x_profile_image TEXT NOT NULL,
+  content TEXT NOT NULL CHECK (char_length(content) <= 500),
+  parent_id UUID REFERENCES comments(id) ON DELETE CASCADE,
+  likes INTEGER DEFAULT 0,
+  liked_by TEXT[] DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_comments_target ON comments(target_type, target_id);
+CREATE INDEX IF NOT EXISTS idx_comments_parent ON comments(parent_id);
+CREATE INDEX IF NOT EXISTS idx_comments_x_id ON comments(x_id);
+
+ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can read comments" ON comments
+  FOR SELECT USING (true);
+
+CREATE POLICY "Authenticated users can insert comments" ON comments
+  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Users can delete own comments" ON comments
+  FOR DELETE USING (x_id = current_setting('request.jwt.claims', true)::json->>'sub');
+
+CREATE TRIGGER comments_updated_at BEFORE UPDATE ON comments
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
