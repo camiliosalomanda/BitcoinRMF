@@ -6,7 +6,7 @@ export const authOptions: NextAuthOptions = {
     TwitterProvider({
       clientId: process.env.AUTH_TWITTER_ID!,
       clientSecret: process.env.AUTH_TWITTER_SECRET!,
-      version: '2.0',
+      name: 'X',
     }),
   ],
   session: {
@@ -15,19 +15,21 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, profile }) {
       if (profile) {
-        const twitterProfile = profile as {
-          data?: {
-            id?: string;
-            username?: string;
-            name?: string;
-            profile_image_url?: string;
-          };
-        };
-        if (twitterProfile.data) {
-          token.xId = twitterProfile.data.id;
-          token.xUsername = twitterProfile.data.username;
-          token.xName = twitterProfile.data.name;
-          token.xProfileImage = twitterProfile.data.profile_image_url;
+        // OAuth 1.0a returns flat profile; OAuth 2.0 nests under .data
+        const p = profile as Record<string, unknown>;
+        if (p.data && typeof p.data === 'object') {
+          // OAuth 2.0 shape
+          const d = p.data as Record<string, string>;
+          token.xId = d.id;
+          token.xUsername = d.username;
+          token.xName = d.name;
+          token.xProfileImage = d.profile_image_url;
+        } else {
+          // OAuth 1.0a shape
+          token.xId = p.id_str as string || String(p.id);
+          token.xUsername = p.screen_name as string;
+          token.xName = p.name as string;
+          token.xProfileImage = p.profile_image_url_https as string;
         }
       }
       return token;
@@ -41,8 +43,5 @@ export const authOptions: NextAuthOptions = {
       }
       return session;
     },
-  },
-  pages: {
-    signIn: '/auth/signin',
   },
 };
