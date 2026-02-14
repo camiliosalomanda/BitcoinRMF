@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import { FUDCategory } from '@/types';
 import type { FUDInput } from '@/lib/validators';
+import { Plus, Twitter } from 'lucide-react';
+
+const X_URL_PATTERN = /^https?:\/\/(twitter\.com|x\.com)\/\w+\/status\/\d+/;
 
 interface FUDFormProps {
   initialData?: Partial<FUDInput>;
@@ -21,7 +24,19 @@ export default function FUDForm({ initialData, onSubmit, isPending, submitLabel 
   const [evidenceAgainst, setEvidenceAgainst] = useState(initialData?.evidenceAgainst?.join('\n') || '');
   const [debunkSummary, setDebunkSummary] = useState(initialData?.debunkSummary || '');
   const [priceImpactEstimate, setPriceImpactEstimate] = useState(initialData?.priceImpactEstimate || '');
+  const [xPostUrl, setXPostUrl] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  function addXPost(target: 'for' | 'against') {
+    if (!xPostUrl.trim() || !X_URL_PATTERN.test(xPostUrl.trim())) return;
+    const url = xPostUrl.trim();
+    if (target === 'for') {
+      setEvidenceFor((prev) => prev ? `${prev}\n${url}` : url);
+    } else {
+      setEvidenceAgainst((prev) => prev ? `${prev}\n${url}` : url);
+    }
+    setXPostUrl('');
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -118,6 +133,43 @@ export default function FUDForm({ initialData, onSubmit, isPending, submitLabel 
           className={inputClass}
           placeholder="Enter each counter-point on a new line..."
         />
+      </div>
+
+      {/* Add X Post as Evidence */}
+      <div>
+        <label className={labelClass}>
+          <Twitter size={12} className="inline mr-1 text-sky-400" />
+          Add X Post as Evidence
+        </label>
+        <div className="flex gap-2">
+          <input
+            value={xPostUrl}
+            onChange={(e) => setXPostUrl(e.target.value)}
+            className={`${inputClass} flex-1`}
+            placeholder="https://x.com/user/status/123456..."
+          />
+          <button
+            type="button"
+            onClick={() => addXPost('for')}
+            disabled={!xPostUrl.trim() || !X_URL_PATTERN.test(xPostUrl.trim())}
+            className="px-3 py-2 bg-red-400/10 text-red-400 text-xs rounded-lg hover:bg-red-400/20 transition-colors disabled:opacity-30 whitespace-nowrap"
+          >
+            <Plus size={12} className="inline mr-1" />
+            For
+          </button>
+          <button
+            type="button"
+            onClick={() => addXPost('against')}
+            disabled={!xPostUrl.trim() || !X_URL_PATTERN.test(xPostUrl.trim())}
+            className="px-3 py-2 bg-green-400/10 text-green-400 text-xs rounded-lg hover:bg-green-400/20 transition-colors disabled:opacity-30 whitespace-nowrap"
+          >
+            <Plus size={12} className="inline mr-1" />
+            Against
+          </button>
+        </div>
+        <p className="text-[10px] text-gray-600 mt-1">
+          Paste an X/Twitter URL and add it as supporting or debunking evidence. Shows as live embed on detail page.
+        </p>
       </div>
 
       <div>

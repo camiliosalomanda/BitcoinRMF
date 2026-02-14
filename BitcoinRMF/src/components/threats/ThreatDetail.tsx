@@ -7,6 +7,7 @@ import ThreatSourceBadge from '@/components/ThreatSourceBadge';
 import StatusBadge from '@/components/StatusBadge';
 import FAIRScoreCard from './FAIRScoreCard';
 import Link from 'next/link';
+import TweetEmbed from '@/components/evidence/TweetEmbed';
 import { ExternalLink, ArrowLeft, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 
 interface ThreatDetailProps {
@@ -162,15 +163,19 @@ export default function ThreatDetail({ threat }: ThreatDetailProps) {
           <h2 className="text-sm font-semibold text-white mb-3">Evidence Sources</h2>
           <div className="space-y-2">
             {threat.evidenceSources.map((src, idx) => (
-              <div key={idx} className="flex items-center gap-2">
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-400">{src.type}</span>
-                <span className="text-xs text-gray-400 flex-1 truncate">{src.title}</span>
-                {src.url && (
-                  <a href={src.url} target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-[#f7931a]">
-                    <ExternalLink size={12} />
-                  </a>
-                )}
-              </div>
+              src.type === 'X_POST' && src.url ? (
+                <TweetEmbed key={idx} url={src.url} />
+              ) : (
+                <div key={idx} className="flex items-center gap-2">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-400">{src.type}</span>
+                  <span className="text-xs text-gray-400 flex-1 truncate">{src.title}</span>
+                  {src.url && (
+                    <a href={src.url} target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-[#f7931a]">
+                      <ExternalLink size={12} />
+                    </a>
+                  )}
+                </div>
+              )
             ))}
           </div>
         </div>

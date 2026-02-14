@@ -50,7 +50,7 @@ export const workflowStatus = z.enum(['draft', 'published', 'archived', 'under_r
 export const evidenceSourceSchema = z.object({
   title: z.string(),
   url: z.string().optional(),
-  type: z.enum(['RESEARCH', 'CVE', 'INCIDENT', 'NEWS', 'BIP', 'WHITEPAPER']),
+  type: z.enum(['RESEARCH', 'CVE', 'INCIDENT', 'NEWS', 'BIP', 'WHITEPAPER', 'X_POST']),
 });
 
 // --- Remediation Strategy ---

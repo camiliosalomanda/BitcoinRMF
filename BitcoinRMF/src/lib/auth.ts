@@ -11,6 +11,10 @@ export const authOptions: NextAuthOptions = {
       name: 'X',
     }),
   ],
+  pages: {
+    signIn: '/auth/signin',
+    error: '/auth/error',
+  },
   session: {
     strategy: 'jwt',
   },

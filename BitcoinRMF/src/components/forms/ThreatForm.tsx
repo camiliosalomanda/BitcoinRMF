@@ -2,7 +2,11 @@
 
 import { useState } from 'react';
 import { STRIDECategory, ThreatSource, AffectedComponent } from '@/types';
+import type { EvidenceSource } from '@/types';
 import type { ThreatInput } from '@/lib/validators';
+import { Plus, X, Twitter } from 'lucide-react';
+
+const X_URL_PATTERN = /^https?:\/\/(twitter\.com|x\.com)\/\w+\/status\/\d+/;
 
 interface ThreatFormProps {
   initialData?: Partial<ThreatInput>;
@@ -27,12 +31,32 @@ export default function ThreatForm({ initialData, onSubmit, isPending, submitLab
   const [impact, setImpact] = useState(initialData?.impact || 3);
   const [vulnerability, setVulnerability] = useState(initialData?.vulnerability || '');
   const [exploitScenario, setExploitScenario] = useState(initialData?.exploitScenario || '');
+  const [evidenceSources, setEvidenceSources] = useState<EvidenceSource[]>(
+    initialData?.evidenceSources as EvidenceSource[] || []
+  );
+  const [newEvidenceUrl, setNewEvidenceUrl] = useState('');
+  const [newEvidenceTitle, setNewEvidenceTitle] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   function toggleComponent(comp: string) {
     setAffectedComponents((prev) =>
       prev.includes(comp) ? prev.filter((c) => c !== comp) : [...prev, comp]
     );
+  }
+
+  function addEvidence() {
+    if (!newEvidenceUrl.trim()) return;
+    const url = newEvidenceUrl.trim();
+    const isXPost = X_URL_PATTERN.test(url);
+    const type = isXPost ? 'X_POST' as const : 'NEWS' as const;
+    const title = newEvidenceTitle.trim() || (isXPost ? 'X Post' : url);
+    setEvidenceSources((prev) => [...prev, { title, url, type }]);
+    setNewEvidenceUrl('');
+    setNewEvidenceTitle('');
+  }
+
+  function removeEvidence(idx: number) {
+    setEvidenceSources((prev) => prev.filter((_, i) => i !== idx));
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -59,6 +83,7 @@ export default function ThreatForm({ initialData, onSubmit, isPending, submitLab
       impact: impact as ThreatInput['impact'],
       vulnerability: vulnerability.trim() || undefined,
       exploitScenario: exploitScenario.trim() || undefined,
+      evidenceSources: evidenceSources.length > 0 ? evidenceSources : undefined,
     });
   }
 
@@ -196,6 +221,54 @@ export default function ThreatForm({ initialData, onSubmit, isPending, submitLab
           className={inputClass}
           placeholder="Step-by-step scenario of how this threat could be exploited..."
         />
+      </div>
+
+      {/* Evidence Sources */}
+      <div>
+        <label className={labelClass}>Evidence Sources</label>
+        {evidenceSources.length > 0 && (
+          <div className="space-y-2 mb-3">
+            {evidenceSources.map((src, idx) => (
+              <div key={idx} className="flex items-center gap-2 bg-[#1a1a24] border border-[#2a2a3a] rounded-lg px-3 py-2">
+                <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                  src.type === 'X_POST' ? 'bg-sky-400/10 text-sky-400' : 'bg-gray-800 text-gray-400'
+                }`}>
+                  {src.type === 'X_POST' && <Twitter size={10} className="inline mr-1" />}
+                  {src.type}
+                </span>
+                <span className="text-xs text-gray-400 flex-1 truncate">{src.title}</span>
+                <button type="button" onClick={() => removeEvidence(idx)} className="text-gray-600 hover:text-red-400">
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="flex gap-2">
+          <input
+            value={newEvidenceUrl}
+            onChange={(e) => setNewEvidenceUrl(e.target.value)}
+            className={`${inputClass} flex-1`}
+            placeholder="Paste URL (x.com links auto-detect as X Post)"
+          />
+          <input
+            value={newEvidenceTitle}
+            onChange={(e) => setNewEvidenceTitle(e.target.value)}
+            className={`${inputClass} flex-1`}
+            placeholder="Title (optional)"
+          />
+          <button
+            type="button"
+            onClick={addEvidence}
+            disabled={!newEvidenceUrl.trim()}
+            className="px-3 py-2 bg-[#2a2a3a] hover:bg-[#3a3a4a] text-gray-300 rounded-lg transition-colors disabled:opacity-30"
+          >
+            <Plus size={16} />
+          </button>
+        </div>
+        <p className="text-[10px] text-gray-600 mt-1">
+          X/Twitter URLs are automatically detected and will show as live embeds
+        </p>
       </div>
 
       <button

@@ -119,7 +119,7 @@ export interface FAIREstimates {
 export interface EvidenceSource {
   title: string;
   url: string;
-  type: 'RESEARCH' | 'CVE' | 'INCIDENT' | 'NEWS' | 'BIP' | 'WHITEPAPER';
+  type: 'RESEARCH' | 'CVE' | 'INCIDENT' | 'NEWS' | 'BIP' | 'WHITEPAPER' | 'X_POST';
 }
 
 export interface RemediationStrategy {

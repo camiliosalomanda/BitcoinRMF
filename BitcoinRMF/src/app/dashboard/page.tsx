@@ -11,6 +11,7 @@ import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useRiskMatrix } from '@/hooks/useRiskMatrix';
 import { getMatrixCellColor } from '@/lib/scoring';
 import { useBitcoinMetrics } from '@/hooks/useMetrics';
+import { useSocialEvidence } from '@/hooks/useSocialEvidence';
 import {
   Shield,
   AlertTriangle,
@@ -20,6 +21,7 @@ import {
   Cpu,
   BarChart3,
   Layers,
+  Twitter,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -30,6 +32,7 @@ export default function DashboardPage() {
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: matrix } = useRiskMatrix();
   const { data: metrics } = useBitcoinMetrics();
+  const socialEvidence = useSocialEvidence();
 
   const topThreats = [...threats]
     .sort((a, b) => b.severityScore - a.severityScore)
@@ -279,6 +282,40 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+        {/* Social Intelligence */}
+        {socialEvidence.length > 0 && (
+          <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Twitter size={14} className="text-sky-400" />
+              <h2 className="text-sm font-semibold text-white">Social Intelligence</h2>
+              <span className="text-[10px] text-gray-500 ml-auto">{socialEvidence.length} X posts tracked</span>
+            </div>
+            <div className="space-y-3">
+              {socialEvidence.slice(0, 5).map((item, idx) => (
+                <Link
+                  key={idx}
+                  href={`/${item.parentType === 'threat' ? 'threats' : 'fud'}/${item.parentId}`}
+                  className="flex items-start gap-3 p-3 rounded-lg border border-[#2a2a3a] hover:border-[#3a3a4a] transition-colors"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-200 truncate">{item.parentName}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      {item.authorHandle && (
+                        <span className="text-[10px] text-sky-400">@{item.authorHandle}</span>
+                      )}
+                      <span className="text-[10px] text-gray-600">{item.source.title}</span>
+                    </div>
+                  </div>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                    item.parentType === 'threat' ? 'text-red-400 bg-red-400/10' : 'text-yellow-400 bg-yellow-400/10'
+                  }`}>
+                    {item.parentType === 'threat' ? 'Threat' : 'FUD'}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

@@ -9,7 +9,10 @@ import { DetailSkeleton } from '@/components/LoadingSkeleton';
 import { useFUDItem } from '@/hooks/useFUD';
 import { useThreats } from '@/hooks/useThreats';
 import { FUDStatus } from '@/types';
+import TweetEmbed from '@/components/evidence/TweetEmbed';
 import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
+
+const X_URL_PATTERN = /^https?:\/\/(twitter\.com|x\.com)\/\w+\/status\/\d+/;
 
 const STATUS_COLORS: Record<FUDStatus, string> = {
   ACTIVE: 'text-red-400 bg-red-400/10 border-red-400/30',
@@ -106,14 +109,18 @@ export default function FUDDetailPage() {
               <XCircle size={14} />
               Evidence Supporting Concern ({fud.evidenceFor.length})
             </h2>
-            <ul className="space-y-2">
+            <div className="space-y-2">
               {fud.evidenceFor.map((ev, idx) => (
-                <li key={idx} className="text-sm text-gray-400 flex items-start gap-2">
-                  <span className="text-red-400/50 mt-0.5">&bull;</span>
-                  {ev}
-                </li>
+                X_URL_PATTERN.test(ev) ? (
+                  <TweetEmbed key={idx} url={ev} />
+                ) : (
+                  <p key={idx} className="text-sm text-gray-400 flex items-start gap-2">
+                    <span className="text-red-400/50 mt-0.5">&bull;</span>
+                    {ev}
+                  </p>
+                )
               ))}
-            </ul>
+            </div>
           </div>
 
           <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-5">
@@ -121,14 +128,18 @@ export default function FUDDetailPage() {
               <CheckCircle size={14} />
               Evidence Against / Debunking ({fud.evidenceAgainst.length})
             </h2>
-            <ul className="space-y-2">
+            <div className="space-y-2">
               {fud.evidenceAgainst.map((ev, idx) => (
-                <li key={idx} className="text-sm text-gray-400 flex items-start gap-2">
-                  <span className="text-green-400/50 mt-0.5">&bull;</span>
-                  {ev}
-                </li>
+                X_URL_PATTERN.test(ev) ? (
+                  <TweetEmbed key={idx} url={ev} />
+                ) : (
+                  <p key={idx} className="text-sm text-gray-400 flex items-start gap-2">
+                    <span className="text-green-400/50 mt-0.5">&bull;</span>
+                    {ev}
+                  </p>
+                )
               ))}
-            </ul>
+            </div>
           </div>
         </div>
 
