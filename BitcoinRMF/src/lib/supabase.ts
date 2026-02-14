@@ -1,16 +1,33 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+let _supabase: SupabaseClient<Database> | null = null;
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+export function getSupabase() {
+  if (!_supabase) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!url || !key) {
+      throw new Error('Supabase URL and anon key are required');
+    }
+    _supabase = createClient<Database>(url, key);
+  }
+  return _supabase;
+}
+
+// Keep backward compat for existing imports that use `supabase` directly
+export const supabase = new Proxy({} as SupabaseClient<Database>, {
+  get(_, prop) {
+    return (getSupabase() as unknown as Record<string, unknown>)[prop as string];
+  },
+});
 
 // Admin client for server-side operations
 export function createAdminClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceRoleKey) {
+  if (!url || !serviceRoleKey) {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured');
   }
-  return createClient<Database>(supabaseUrl, serviceRoleKey);
+  return createClient<Database>(url, serviceRoleKey);
 }

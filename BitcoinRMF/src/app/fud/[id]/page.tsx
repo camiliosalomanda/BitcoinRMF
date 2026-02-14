@@ -5,7 +5,9 @@ import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import SeverityBadge from '@/components/SeverityBadge';
 import CommentSection from '@/components/comments/CommentSection';
-import { useRMFStore } from '@/lib/store';
+import { DetailSkeleton } from '@/components/LoadingSkeleton';
+import { useFUDItem } from '@/hooks/useFUD';
+import { useThreats } from '@/hooks/useThreats';
 import { FUDStatus } from '@/types';
 import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
 
@@ -18,9 +20,16 @@ const STATUS_COLORS: Record<FUDStatus, string> = {
 export default function FUDDetailPage() {
   const params = useParams();
   const id = params.id as string;
-  const { fudAnalyses, threats } = useRMFStore();
+  const { data: fud, isLoading: fudLoading } = useFUDItem(id);
+  const { data: threats = [] } = useThreats();
 
-  const fud = fudAnalyses.find((f) => f.id === id);
+  if (fudLoading) {
+    return (
+      <DashboardLayout>
+        <DetailSkeleton />
+      </DashboardLayout>
+    );
+  }
 
   if (!fud) {
     return (

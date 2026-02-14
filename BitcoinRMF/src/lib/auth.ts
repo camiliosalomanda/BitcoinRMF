@@ -1,6 +1,8 @@
 import type { NextAuthOptions } from 'next-auth';
 import TwitterProvider from 'next-auth/providers/twitter';
 
+const ADMIN_X_IDS = (process.env.ADMIN_X_IDS || '').split(',').filter(Boolean);
+
 export const authOptions: NextAuthOptions = {
   providers: [
     TwitterProvider({
@@ -32,6 +34,10 @@ export const authOptions: NextAuthOptions = {
           token.xProfileImage = p.profile_image_url_https as string;
         }
       }
+      // Set admin flag based on X ID
+      if (token.xId) {
+        token.isAdmin = ADMIN_X_IDS.includes(token.xId);
+      }
       return token;
     },
     async session({ session, token }) {
@@ -40,6 +46,7 @@ export const authOptions: NextAuthOptions = {
         session.user.xUsername = token.xUsername as string;
         session.user.xName = token.xName as string;
         session.user.xProfileImage = token.xProfileImage as string;
+        session.user.isAdmin = token.isAdmin as boolean;
       }
       return session;
     },

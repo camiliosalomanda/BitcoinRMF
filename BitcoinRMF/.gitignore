@@ -87,3 +87,5 @@ secrets/
 *.sqlite
 *.sqlite3
 *.db
+
+.vercel

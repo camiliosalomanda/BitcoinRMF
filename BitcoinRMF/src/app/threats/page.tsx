@@ -4,15 +4,19 @@ import { useState, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import ThreatCard from '@/components/threats/ThreatCard';
 import ThreatFilters from '@/components/threats/ThreatFilters';
-import { useRMFStore } from '@/lib/store';
+import { ListSkeleton } from '@/components/LoadingSkeleton';
+import { useThreats } from '@/hooks/useThreats';
 import { STRIDECategory, ThreatSource, RiskRating, ThreatStatus } from '@/types';
-import { ArrowUpDown } from 'lucide-react';
+import { useUserRole } from '@/hooks/useUserRole';
+import Link from 'next/link';
+import { ArrowUpDown, Plus } from 'lucide-react';
 
 type SortField = 'severity' | 'likelihood' | 'impact' | 'name';
 type SortDir = 'asc' | 'desc';
 
 export default function ThreatsPage() {
-  const { threats } = useRMFStore();
+  const { data: threats = [], isLoading } = useThreats();
+  const { isAuthenticated } = useUserRole();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [strideFilter, setStrideFilter] = useState<STRIDECategory | ''>('');
@@ -81,6 +85,15 @@ export default function ThreatsPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {isAuthenticated && (
+              <Link
+                href="/threats/submit"
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-[#f7931a]/10 text-[#f7931a] border border-[#f7931a]/20 rounded-lg hover:bg-[#f7931a]/20 transition-colors"
+              >
+                <Plus size={12} />
+                Submit New
+              </Link>
+            )}
             {(['severity', 'likelihood', 'impact', 'name'] as SortField[]).map((field) => (
               <button
                 key={field}
@@ -111,13 +124,17 @@ export default function ThreatsPage() {
           onStatusChange={setStatusFilter}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filteredThreats.map((threat) => (
-            <ThreatCard key={threat.id} threat={threat} />
-          ))}
-        </div>
+        {isLoading ? (
+          <ListSkeleton count={6} />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {filteredThreats.map((threat) => (
+              <ThreatCard key={threat.id} threat={threat} />
+            ))}
+          </div>
+        )}
 
-        {filteredThreats.length === 0 && (
+        {!isLoading && filteredThreats.length === 0 && (
           <div className="text-center py-12 text-gray-600">
             <p className="text-sm">No threats match your filters</p>
           </div>

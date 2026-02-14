@@ -1,37 +1,48 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRMFStore } from './store';
+import { useUIStore } from './store';
 
 /**
- * Hook that waits for Zustand persist rehydration from localStorage,
- * then initializes seed data if needed. Returns true when ready.
+ * Hook that waits for Zustand persist rehydration from localStorage.
+ * Performs one-time migration from old 'bitcoin-rmf-storage' key
+ * (extracts comments) into new 'bitcoin-rmf-ui' key.
  */
 export function useHydration(): boolean {
   const [hydrated, setHydrated] = useState(false);
-  const { isInitialized, initializeSeedData } = useRMFStore();
 
   useEffect(() => {
-    // Zustand persist onRehydrateStorage fires synchronously after
-    // localStorage is read. By the time useEffect runs, rehydration
-    // is already complete. We just need to wait one tick.
-    const unsub = useRMFStore.persist.onFinishHydration(() => {
-      if (!useRMFStore.getState().isInitialized) {
-        initializeSeedData();
-      }
-      setHydrated(true);
-    });
-
-    // If already rehydrated (e.g. fast localStorage read)
-    if (useRMFStore.persist.hasHydrated()) {
-      if (!useRMFStore.getState().isInitialized) {
-        initializeSeedData();
+    function onHydrated() {
+      // One-time migration: extract comments from old localStorage key
+      try {
+        const oldKey = 'bitcoin-rmf-storage';
+        const oldData = localStorage.getItem(oldKey);
+        if (oldData) {
+          const parsed = JSON.parse(oldData);
+          const oldComments = parsed?.state?.comments;
+          if (Array.isArray(oldComments) && oldComments.length > 0) {
+            const currentComments = useUIStore.getState().comments;
+            if (currentComments.length === 0) {
+              // Migrate comments
+              useUIStore.setState({ comments: oldComments });
+            }
+          }
+          localStorage.removeItem(oldKey);
+        }
+      } catch {
+        // Migration failed, not critical
       }
       setHydrated(true);
     }
 
+    const unsub = useUIStore.persist.onFinishHydration(onHydrated);
+
+    if (useUIStore.persist.hasHydrated()) {
+      onHydrated();
+    }
+
     return unsub;
-  }, [initializeSeedData]);
+  }, []);
 
   return hydrated;
 }

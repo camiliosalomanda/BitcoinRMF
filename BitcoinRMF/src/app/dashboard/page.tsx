@@ -3,21 +3,34 @@
 import DashboardLayout from '@/components/DashboardLayout';
 import StatCard from '@/components/StatCard';
 import SeverityBadge from '@/components/SeverityBadge';
-import { useRMFStore } from '@/lib/store';
+import { StatsSkeleton } from '@/components/LoadingSkeleton';
+import { useThreats } from '@/hooks/useThreats';
+import { useFUD } from '@/hooks/useFUD';
+import { useBIPs } from '@/hooks/useBIPs';
+import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { useRiskMatrix } from '@/hooks/useRiskMatrix';
 import { getMatrixCellColor } from '@/lib/scoring';
+import { useBitcoinMetrics } from '@/hooks/useMetrics';
 import {
   Shield,
   AlertTriangle,
   Activity,
   Wrench,
+  Bitcoin,
+  Cpu,
+  BarChart3,
+  Layers,
 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function DashboardPage() {
-  const { threats, fudAnalyses, bips, getDashboardStats, getRiskMatrix } = useRMFStore();
+  const { data: threats = [] } = useThreats();
+  const { data: fudAnalyses = [] } = useFUD();
+  const { data: bips = [] } = useBIPs();
+  const { data: stats, isLoading: statsLoading } = useDashboardStats();
+  const { data: matrix } = useRiskMatrix();
+  const { data: metrics } = useBitcoinMetrics();
 
-  const stats = getDashboardStats();
-  const matrix = getRiskMatrix();
   const topThreats = [...threats]
     .sort((a, b) => b.severityScore - a.severityScore)
     .slice(0, 5);
@@ -32,34 +45,83 @@ export default function DashboardPage() {
           <p className="text-gray-500 text-sm mt-1">Bitcoin threat landscape overview</p>
         </div>
 
+        {/* Live Bitcoin Metrics */}
+        {metrics && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Bitcoin size={14} className="text-[#f7931a]" />
+                <span className="text-[10px] text-gray-500 uppercase tracking-wide">Price</span>
+              </div>
+              <p className="text-lg font-bold text-white">
+                {metrics.price ? `$${metrics.price.toLocaleString()}` : '—'}
+              </p>
+            </div>
+            <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Cpu size={14} className="text-[#f7931a]" />
+                <span className="text-[10px] text-gray-500 uppercase tracking-wide">Hashrate</span>
+              </div>
+              <p className="text-lg font-bold text-white">
+                {metrics.hashrate ? `${metrics.hashrate} EH/s` : '—'}
+              </p>
+            </div>
+            <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <BarChart3 size={14} className="text-[#f7931a]" />
+                <span className="text-[10px] text-gray-500 uppercase tracking-wide">Block</span>
+              </div>
+              <p className="text-lg font-bold text-white">
+                {metrics.blockHeight ? `#${metrics.blockHeight.toLocaleString()}` : '—'}
+              </p>
+            </div>
+            <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Layers size={14} className="text-[#f7931a]" />
+                <span className="text-[10px] text-gray-500 uppercase tracking-wide">Mempool</span>
+              </div>
+              <p className="text-lg font-bold text-white">
+                {metrics.mempoolSize ? `${metrics.mempoolSize.toLocaleString()} tx` : '—'}
+              </p>
+              {metrics.medianFee && (
+                <p className="text-[10px] text-gray-500 mt-0.5">{metrics.medianFee} sat/vB</p>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Stat Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            label="Total Threats"
-            value={stats.totalThreats}
-            icon={Shield}
-            color="#f7931a"
-          />
-          <StatCard
-            label="Critical / High"
-            value={stats.criticalHighCount}
-            icon={AlertTriangle}
-            color="#ef4444"
-            trend={stats.criticalHighCount > 0 ? { direction: 'neutral', label: 'Active monitoring' } : undefined}
-          />
-          <StatCard
-            label="Avg Severity"
-            value={stats.averageSeverity}
-            icon={Activity}
-            color="#eab308"
-          />
-          <StatCard
-            label="Active Remediations"
-            value={stats.activeRemediations}
-            icon={Wrench}
-            color="#22c55e"
-          />
-        </div>
+        {statsLoading || !stats ? (
+          <StatsSkeleton />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard
+              label="Total Threats"
+              value={stats.totalThreats}
+              icon={Shield}
+              color="#f7931a"
+            />
+            <StatCard
+              label="Critical / High"
+              value={stats.criticalHighCount}
+              icon={AlertTriangle}
+              color="#ef4444"
+              trend={stats.criticalHighCount > 0 ? { direction: 'neutral', label: 'Active monitoring' } : undefined}
+            />
+            <StatCard
+              label="Avg Severity"
+              value={stats.averageSeverity}
+              icon={Activity}
+              color="#eab308"
+            />
+            <StatCard
+              label="Active Remediations"
+              value={stats.activeRemediations}
+              icon={Wrench}
+              color="#22c55e"
+            />
+          </div>
+        )}
 
         {/* Middle Row: Risk Matrix + Top Threats */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -71,44 +133,50 @@ export default function DashboardPage() {
                 View full matrix
               </Link>
             </div>
-            <div className="flex gap-2">
-              {/* Y-axis label */}
-              <div className="flex flex-col justify-between text-[9px] text-gray-500 py-1 pr-1">
-                {[5, 4, 3, 2, 1].map((l) => (
-                  <div key={l} className="h-8 flex items-center">{l}</div>
-                ))}
-              </div>
-              {/* Grid */}
-              <div className="flex-1">
-                <div className="grid grid-rows-5 gap-1">
-                  {matrix.map((row, ri) => (
-                    <div key={ri} className="grid grid-cols-5 gap-1">
-                      {row.map((cell) => (
-                        <div
-                          key={`${cell.likelihood}-${cell.impact}`}
-                          className={`h-8 rounded flex items-center justify-center text-[10px] font-bold ${getMatrixCellColor(
-                            cell.likelihood,
-                            cell.impact
-                          )} ${cell.count > 0 ? 'text-white' : 'text-transparent'}`}
-                          title={`L${cell.likelihood} × I${cell.impact}: ${cell.count} threats`}
-                        >
-                          {cell.count || ''}
+            {matrix ? (
+              <>
+                <div className="flex gap-2">
+                  {/* Y-axis label */}
+                  <div className="flex flex-col justify-between text-[9px] text-gray-500 py-1 pr-1">
+                    {[5, 4, 3, 2, 1].map((l) => (
+                      <div key={l} className="h-8 flex items-center">{l}</div>
+                    ))}
+                  </div>
+                  {/* Grid */}
+                  <div className="flex-1">
+                    <div className="grid grid-rows-5 gap-1">
+                      {matrix.map((row, ri) => (
+                        <div key={ri} className="grid grid-cols-5 gap-1">
+                          {row.map((cell) => (
+                            <div
+                              key={`${cell.likelihood}-${cell.impact}`}
+                              className={`h-8 rounded flex items-center justify-center text-[10px] font-bold ${getMatrixCellColor(
+                                cell.likelihood,
+                                cell.impact
+                              )} ${cell.count > 0 ? 'text-white' : 'text-transparent'}`}
+                              title={`L${cell.likelihood} × I${cell.impact}: ${cell.count} threats`}
+                            >
+                              {cell.count || ''}
+                            </div>
+                          ))}
                         </div>
                       ))}
                     </div>
-                  ))}
+                    {/* X-axis labels */}
+                    <div className="grid grid-cols-5 gap-1 mt-1">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <div key={i} className="text-center text-[9px] text-gray-500">{i}</div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                {/* X-axis labels */}
-                <div className="grid grid-cols-5 gap-1 mt-1">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="text-center text-[9px] text-gray-500">{i}</div>
-                  ))}
+                <div className="flex justify-between mt-2 text-[9px] text-gray-600">
+                  <span>Likelihood (Y) / Impact (X)</span>
                 </div>
-              </div>
-            </div>
-            <div className="flex justify-between mt-2 text-[9px] text-gray-600">
-              <span>Likelihood (Y) / Impact (X)</span>
-            </div>
+              </>
+            ) : (
+              <div className="h-48 bg-gray-800/30 rounded animate-pulse" />
+            )}
           </div>
 
           {/* Top Threats */}

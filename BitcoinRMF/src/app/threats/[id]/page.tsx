@@ -4,14 +4,21 @@ import { useParams } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import ThreatDetail from '@/components/threats/ThreatDetail';
 import CommentSection from '@/components/comments/CommentSection';
-import { useRMFStore } from '@/lib/store';
+import { DetailSkeleton } from '@/components/LoadingSkeleton';
+import { useThreat } from '@/hooks/useThreats';
 
 export default function ThreatDetailPage() {
   const params = useParams();
   const id = params.id as string;
-  const { getThreatById } = useRMFStore();
+  const { data: threat, isLoading } = useThreat(id);
 
-  const threat = getThreatById(id);
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <DetailSkeleton />
+      </DashboardLayout>
+    );
+  }
 
   if (!threat) {
     return (

@@ -2,12 +2,10 @@
 
 import DashboardLayout from '@/components/DashboardLayout';
 import RiskHeatmap from '@/components/risk-matrix/RiskHeatmap';
-import { useRMFStore } from '@/lib/store';
+import { useRiskMatrix } from '@/hooks/useRiskMatrix';
 
 export default function RiskMatrixPage() {
-  const { getRiskMatrix } = useRMFStore();
-
-  const matrix = getRiskMatrix();
+  const { data: matrix, isLoading } = useRiskMatrix();
 
   return (
     <DashboardLayout>
@@ -20,7 +18,11 @@ export default function RiskMatrixPage() {
         </div>
 
         <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-6">
-          <RiskHeatmap matrix={matrix} />
+          {isLoading || !matrix ? (
+            <div className="h-96 bg-gray-800/30 rounded animate-pulse" />
+          ) : (
+            <RiskHeatmap matrix={matrix} />
+          )}
         </div>
       </div>
     </DashboardLayout>

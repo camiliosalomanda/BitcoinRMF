@@ -13,8 +13,12 @@ import {
   ChevronRight,
   X,
   Bitcoin,
+  ShieldCheck,
+  Plus,
+  BookOpen,
 } from 'lucide-react';
 import SignInButton from '@/components/auth/SignInButton';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -27,10 +31,18 @@ const NAV_ITEMS = [
   { href: '/risk-matrix', label: 'Risk Matrix', icon: Grid3X3 },
   { href: '/bips', label: 'BIP Evaluator', icon: FileCode },
   { href: '/fud', label: 'FUD Tracker', icon: MessageSquareWarning },
+  { href: '/methodology', label: 'Methodology', icon: BookOpen },
+];
+
+const SUBMIT_ITEMS = [
+  { href: '/threats/submit', label: 'Submit Threat' },
+  { href: '/bips/submit', label: 'Submit BIP' },
+  { href: '/fud/submit', label: 'Submit FUD' },
 ];
 
 export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const pathname = usePathname();
+  const { isAuthenticated, isAdmin } = useUserRole();
 
   return (
     <>
@@ -108,6 +120,55 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
                 </Link>
               );
             })}
+
+            {/* Submit Links (authenticated users) */}
+            {isAuthenticated && isOpen && (
+              <>
+                <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mt-6 mb-3 px-3">
+                  Community
+                </p>
+                {SUBMIT_ITEMS.map((item) => {
+                  const isActive = pathname === item.href;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                        isActive
+                          ? 'bg-[#f7931a]/10 text-[#f7931a] border border-[#f7931a]/20'
+                          : 'text-gray-400 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      <Plus size={16} />
+                      <span className="text-sm font-medium">{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </>
+            )}
+
+            {/* Admin Link */}
+            {isAdmin && (
+              <>
+                {isOpen && (
+                  <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mt-6 mb-3 px-3">
+                    Admin
+                  </p>
+                )}
+                <Link
+                  href="/admin"
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                    pathname?.startsWith('/admin')
+                      ? 'bg-[#f7931a]/10 text-[#f7931a] border border-[#f7931a]/20'
+                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  } ${!isOpen && 'lg:justify-center'}`}
+                  title={!isOpen ? 'Admin' : undefined}
+                >
+                  <ShieldCheck size={20} />
+                  {isOpen && <span className="text-sm font-medium">Admin</span>}
+                </Link>
+              </>
+            )}
           </nav>
 
           {/* Auth */}

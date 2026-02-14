@@ -6,7 +6,9 @@ import DashboardLayout from '@/components/DashboardLayout';
 import ScoreGauge from '@/components/ScoreGauge';
 import SeverityBadge from '@/components/SeverityBadge';
 import CommentSection from '@/components/comments/CommentSection';
-import { useRMFStore } from '@/lib/store';
+import { DetailSkeleton } from '@/components/LoadingSkeleton';
+import { useBIP } from '@/hooks/useBIPs';
+import { useThreats } from '@/hooks/useThreats';
 import { BIPRecommendation } from '@/types';
 import { ArrowLeft } from 'lucide-react';
 
@@ -21,9 +23,16 @@ const RECOMMENDATION_COLORS: Record<BIPRecommendation, string> = {
 export default function BIPDetailPage() {
   const params = useParams();
   const id = params.id as string;
-  const { bips, threats } = useRMFStore();
+  const { data: bip, isLoading: bipLoading } = useBIP(id);
+  const { data: threats = [] } = useThreats();
 
-  const bip = bips.find((b) => b.id === id);
+  if (bipLoading) {
+    return (
+      <DashboardLayout>
+        <DetailSkeleton />
+      </DashboardLayout>
+    );
+  }
 
   if (!bip) {
     return (

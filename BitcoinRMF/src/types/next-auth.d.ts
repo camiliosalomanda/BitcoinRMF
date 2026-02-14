@@ -11,6 +11,7 @@ declare module 'next-auth' {
       xUsername?: string;
       xName?: string;
       xProfileImage?: string;
+      isAdmin?: boolean;
     };
   }
 }
@@ -21,5 +22,6 @@ declare module 'next-auth/jwt' {
     xUsername?: string;
     xName?: string;
     xProfileImage?: string;
+    isAdmin?: boolean;
   }
 }

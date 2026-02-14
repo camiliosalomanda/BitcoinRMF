@@ -1,5 +1,7 @@
 export interface Database {
   public: {
+    Views: {};
+    Functions: {};
     Tables: {
       users: {
         Row: {
@@ -24,6 +26,7 @@ export interface Database {
           password_hash?: string;
           role?: 'admin' | 'analyst' | 'user';
         };
+        Relationships: [];
       };
       threats: {
         Row: {
@@ -43,22 +46,29 @@ export interface Database {
           severity_score: number;
           risk_rating: string;
           fair_tef: number | null;
+          fair_tef_citation: string | null;
           fair_vulnerability: number | null;
+          fair_vulnerability_citation: string | null;
           fair_lef: number | null;
           fair_primary_loss_usd: number | null;
+          fair_primary_loss_citation: string | null;
           fair_secondary_loss_usd: number | null;
+          fair_secondary_loss_citation: string | null;
           fair_ale: number | null;
+          remediation_strategies: unknown;
           nist_stage: string;
+          rmf_status: string;
           status: string;
           related_bips: string[];
           evidence_sources: unknown;
-          created_by: string | null;
+          submitted_by: string | null;
+          submitted_by_name: string | null;
           date_identified: string;
           created_at: string;
           updated_at: string;
         };
         Insert: {
-          id?: string;
+          id: string;
           name: string;
           description: string;
           stride_category: string;
@@ -77,40 +87,45 @@ export interface Database {
           fair_primary_loss_usd?: number | null;
           fair_secondary_loss_usd?: number | null;
           fair_ale?: number | null;
+          remediation_strategies?: unknown;
           nist_stage?: string;
+          rmf_status?: string;
           status?: string;
           related_bips?: string[];
           evidence_sources?: unknown;
-          created_by?: string | null;
+          submitted_by?: string | null;
+          submitted_by_name?: string | null;
         };
-        Update: Partial<Database['public']['Tables']['threats']['Insert']>;
-      };
-      remediation_strategies: {
-        Row: {
-          id: string;
-          threat_id: string;
-          title: string;
-          description: string | null;
-          effectiveness: number | null;
-          estimated_cost_usd: number | null;
-          timeline_months: number | null;
-          status: string;
-          related_bips: string[];
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
+        Update: {
           id?: string;
-          threat_id: string;
-          title: string;
-          description?: string | null;
-          effectiveness?: number | null;
-          estimated_cost_usd?: number | null;
-          timeline_months?: number | null;
+          name?: string;
+          description?: string;
+          stride_category?: string;
+          threat_source?: string;
+          likelihood?: number;
+          impact?: number;
+          stride_rationale?: string | null;
+          affected_components?: string[];
+          vulnerability?: string | null;
+          exploit_scenario?: string | null;
+          likelihood_justification?: string | null;
+          impact_justification?: string | null;
+          fair_tef?: number | null;
+          fair_vulnerability?: number | null;
+          fair_lef?: number | null;
+          fair_primary_loss_usd?: number | null;
+          fair_secondary_loss_usd?: number | null;
+          fair_ale?: number | null;
+          remediation_strategies?: unknown;
+          nist_stage?: string;
+          rmf_status?: string;
           status?: string;
           related_bips?: string[];
+          evidence_sources?: unknown;
+          submitted_by?: string | null;
+          submitted_by_name?: string | null;
         };
-        Update: Partial<Database['public']['Tables']['remediation_strategies']['Insert']>;
+        Relationships: [];
       };
       bip_evaluations: {
         Row: {
@@ -126,13 +141,15 @@ export interface Database {
           implementation_readiness: number | null;
           economic_impact: string | null;
           adoption_percentage: number | null;
+          bip_status: string;
           status: string;
-          created_by: string | null;
+          submitted_by: string | null;
+          submitted_by_name: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
-          id?: string;
+          id: string;
           bip_number: string;
           title: string;
           summary?: string | null;
@@ -144,10 +161,30 @@ export interface Database {
           implementation_readiness?: number | null;
           economic_impact?: string | null;
           adoption_percentage?: number | null;
+          bip_status?: string;
           status?: string;
-          created_by?: string | null;
+          submitted_by?: string | null;
+          submitted_by_name?: string | null;
         };
-        Update: Partial<Database['public']['Tables']['bip_evaluations']['Insert']>;
+        Update: {
+          id?: string;
+          bip_number?: string;
+          title?: string;
+          summary?: string | null;
+          recommendation?: string | null;
+          necessity_score?: number | null;
+          threats_addressed?: string[];
+          mitigation_effectiveness?: number | null;
+          community_consensus?: number | null;
+          implementation_readiness?: number | null;
+          economic_impact?: string | null;
+          adoption_percentage?: number | null;
+          bip_status?: string;
+          status?: string;
+          submitted_by?: string | null;
+          submitted_by_name?: string | null;
+        };
+        Relationships: [];
       };
       fud_analyses: {
         Row: {
@@ -155,6 +192,7 @@ export interface Database {
           narrative: string;
           category: string;
           validity_score: number | null;
+          fud_status: string;
           status: string;
           evidence_for: string[];
           evidence_against: string[];
@@ -162,24 +200,102 @@ export interface Database {
           related_threats: string[];
           price_impact_estimate: string | null;
           last_seen: string;
-          created_by: string | null;
+          submitted_by: string | null;
+          submitted_by_name: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
-          id?: string;
+          id: string;
           narrative: string;
           category: string;
           validity_score?: number | null;
+          fud_status?: string;
           status?: string;
           evidence_for?: string[];
           evidence_against?: string[];
           debunk_summary?: string | null;
           related_threats?: string[];
           price_impact_estimate?: string | null;
-          created_by?: string | null;
+          submitted_by?: string | null;
+          submitted_by_name?: string | null;
         };
-        Update: Partial<Database['public']['Tables']['fud_analyses']['Insert']>;
+        Update: {
+          id?: string;
+          narrative?: string;
+          category?: string;
+          validity_score?: number | null;
+          fud_status?: string;
+          status?: string;
+          evidence_for?: string[];
+          evidence_against?: string[];
+          debunk_summary?: string | null;
+          related_threats?: string[];
+          price_impact_estimate?: string | null;
+          submitted_by?: string | null;
+          submitted_by_name?: string | null;
+        };
+        Relationships: [];
+      };
+      audit_log: {
+        Row: {
+          id: string;
+          entity_type: string;
+          entity_id: string;
+          action: string;
+          user_id: string;
+          user_name: string;
+          diff: unknown;
+          created_at: string;
+        };
+        Insert: {
+          entity_type: string;
+          entity_id: string;
+          action: string;
+          user_id: string;
+          user_name: string;
+          diff?: unknown;
+        };
+        Update: never;
+        Relationships: [];
+      };
+      comments: {
+        Row: {
+          id: string;
+          target_type: string;
+          target_id: string;
+          x_id: string;
+          x_username: string;
+          x_name: string;
+          x_profile_image: string;
+          content: string;
+          parent_id: string | null;
+          likes: number;
+          liked_by: string[];
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          target_type: string;
+          target_id: string;
+          x_id: string;
+          x_username: string;
+          x_name: string;
+          x_profile_image: string;
+          content: string;
+          parent_id?: string | null;
+        };
+        Update: {
+          target_type?: string;
+          target_id?: string;
+          x_id?: string;
+          x_username?: string;
+          x_name?: string;
+          x_profile_image?: string;
+          content?: string;
+          parent_id?: string | null;
+        };
+        Relationships: [];
       };
     };
   };
