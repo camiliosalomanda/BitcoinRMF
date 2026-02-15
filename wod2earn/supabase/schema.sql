@@ -6,6 +6,9 @@ CREATE TYPE difficulty_level AS ENUM ('beginner', 'intermediate', 'advanced', 'e
 CREATE TYPE subscription_tier AS ENUM ('free', 'pro', 'elite');
 CREATE TYPE achievement_rarity AS ENUM ('common', 'rare', 'epic', 'legendary');
 CREATE TYPE quest_category AS ENUM ('strength', 'cardio', 'flexibility', 'endurance', 'mixed');
+CREATE TYPE body_type AS ENUM ('ectomorph', 'mesomorph', 'endomorph');
+CREATE TYPE gender AS ENUM ('male', 'female', 'non_binary', 'prefer_not_to_say');
+CREATE TYPE fitness_goal AS ENUM ('lose_weight', 'build_muscle', 'maintain', 'endurance');
 CREATE TYPE guild_role AS ENUM ('admin', 'moderator', 'member');
 
 -- Users
@@ -24,6 +27,12 @@ CREATE TABLE users (
   last_workout_date DATE,
   workouts_completed INTEGER NOT NULL DEFAULT 0,
   subscription_tier subscription_tier NOT NULL DEFAULT 'free',
+  height_cm NUMERIC(5,1),
+  weight_kg NUMERIC(5,1),
+  body_type body_type,
+  date_of_birth DATE,
+  gender gender,
+  fitness_goal fitness_goal,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

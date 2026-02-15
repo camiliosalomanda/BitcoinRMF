@@ -12,8 +12,25 @@ export interface UserProfile {
   last_workout_date: string | null;
   workouts_completed: number;
   subscription_tier: SubscriptionTier;
+  height_cm: number | null;
+  weight_kg: number | null;
+  body_type: BodyType | null;
+  date_of_birth: string | null;
+  gender: Gender | null;
+  fitness_goal: FitnessGoal | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface ProfileUpdatePayload {
+  display_name?: string;
+  avatar_url?: string | null;
+  height_cm?: number | null;
+  weight_kg?: number | null;
+  body_type?: BodyType | null;
+  date_of_birth?: string | null;
+  gender?: Gender | null;
+  fitness_goal?: FitnessGoal | null;
 }
 
 export type SubscriptionTier = 'free' | 'pro' | 'elite';
@@ -21,6 +38,9 @@ export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced' | 'elite'
 export type AchievementRarity = 'common' | 'rare' | 'epic' | 'legendary';
 export type QuestCategory = 'strength' | 'cardio' | 'flexibility' | 'endurance' | 'mixed';
 export type RecoveryLevel = 'low' | 'medium' | 'high';
+export type BodyType = 'ectomorph' | 'mesomorph' | 'endomorph';
+export type Gender = 'male' | 'female' | 'non_binary' | 'prefer_not_to_say';
+export type FitnessGoal = 'lose_weight' | 'build_muscle' | 'maintain' | 'endurance';
 
 export interface Exercise {
   name: string;
