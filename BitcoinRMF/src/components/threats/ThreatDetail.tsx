@@ -45,7 +45,6 @@ export default function ThreatDetail({ threat }: ThreatDetailProps) {
             <ShareToXButton
               text={`\u26a0\ufe0f ${threat.riskRating} Bitcoin Threat: "${threat.name}" \u2014 Severity ${threat.severityScore}/25 (${threat.strideCategory})`}
               hashtags={['Bitcoin', 'BitcoinRMF']}
-              url={typeof window !== 'undefined' ? window.location.href : undefined}
             />
           </div>
         </div>

@@ -83,7 +83,6 @@ export default function FUDDetailPageClient() {
               <ShareToXButton
                 text={`Bitcoin FUD Check: "${fud.narrative.length > 100 ? fud.narrative.slice(0, 100) + '\u2026' : fud.narrative}" \u2014 ${fud.status.replace(/_/g, ' ')} (Validity: ${fud.validityScore}%)`}
                 hashtags={['Bitcoin', 'FUD', 'BitcoinRMF']}
-                url={typeof window !== 'undefined' ? window.location.href : undefined}
               />
             </div>
           </div>

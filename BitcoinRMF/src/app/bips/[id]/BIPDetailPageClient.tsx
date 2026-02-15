@@ -80,7 +80,6 @@ export default function BIPDetailPageClient() {
               <ShareToXButton
                 text={`${bip.bipNumber}: "${bip.title}" \u2014 ${bip.recommendation} (Necessity: ${bip.necessityScore}/100)`}
                 hashtags={['Bitcoin', 'BIP', 'BitcoinRMF']}
-                url={typeof window !== 'undefined' ? window.location.href : undefined}
               />
             </div>
           </div>

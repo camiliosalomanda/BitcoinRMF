@@ -21,7 +21,6 @@ export default function RiskMatrixPageClient() {
           <ShareToXButton
             text="Bitcoin Risk Matrix \u2014 5\u00d75 heatmap of the threat landscape mapped by Likelihood vs Impact"
             hashtags={['Bitcoin', 'RiskManagement', 'BitcoinRMF']}
-            url={typeof window !== 'undefined' ? window.location.href : undefined}
           />
         </div>
 

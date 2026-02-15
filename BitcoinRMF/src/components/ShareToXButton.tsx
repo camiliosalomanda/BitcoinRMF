@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Twitter } from 'lucide-react';
 
 interface ShareToXButtonProps {
@@ -9,9 +10,17 @@ interface ShareToXButtonProps {
 }
 
 export default function ShareToXButton({ text, url, hashtags }: ShareToXButtonProps) {
+  const [currentUrl, setCurrentUrl] = useState(url);
+
+  useEffect(() => {
+    if (!url) {
+      setCurrentUrl(window.location.href);
+    }
+  }, [url]);
+
   const params = new URLSearchParams({ text });
-  if (url) {
-    params.set('url', url);
+  if (currentUrl) {
+    params.set('url', currentUrl);
   }
   if (hashtags?.length) {
     params.set('hashtags', hashtags.join(','));
