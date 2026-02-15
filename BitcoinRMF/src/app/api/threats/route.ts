@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(threats);
   }
 
-  let query = supabase.from('threats').select('*').eq('status', 'published');
+  let query = supabase.from('threats').select('*').in('status', ['published', 'under_review']);
   if (stride) query = query.eq('stride_category', stride);
   if (source) query = query.eq('threat_source', source);
   if (rating) query = query.eq('risk_rating', rating);

@@ -176,7 +176,7 @@ export default function FUDDetailPage() {
         </div>
 
         {/* Community Vote */}
-        <VotePanel targetType="fud" targetId={id} submittedBy={fud.submittedBy} itemStatus={fud.status} />
+        <VotePanel targetType="fud" targetId={id} submittedBy={fud.submittedBy} itemStatus={fud.workflowStatus} />
 
         {/* Comments */}
         <CommentSection targetType="fud" targetId={id} />

@@ -47,6 +47,7 @@ export interface ThreatRow {
   fair_secondary_loss_usd: number | null;
   fair_ale: number | null;
   nist_stage: string;
+  rmf_status: string;
   status: string;
   related_bips: string[];
   evidence_sources: unknown;
@@ -80,6 +81,7 @@ export interface FUDRow {
   narrative: string;
   category: string;
   validity_score: number | null;
+  fud_status: string;
   status: string;
   evidence_for: string[];
   evidence_against: string[];
@@ -146,7 +148,8 @@ export function threatFromRow(row: ThreatRow): Threat {
       annualizedLossExpectancy: Number(row.fair_ale) || 0,
     },
     nistStage: (row.nist_stage || 'PREPARE') as NistRmfStage,
-    status: (row.status || 'IDENTIFIED') as ThreatStatus,
+    status: (row.rmf_status || 'IDENTIFIED') as ThreatStatus,
+    workflowStatus: row.status || 'published',
     remediationStrategies: parseRemediationStrategies(row.remediation_strategies, row.id),
     relatedBIPs: row.related_bips || [],
     evidenceSources: parseEvidenceSources(row.evidence_sources),
@@ -181,7 +184,8 @@ export function fudFromRow(row: FUDRow): FUDAnalysis {
     narrative: row.narrative,
     category: row.category as FUDCategory,
     validityScore: row.validity_score ?? 50,
-    status: (row.status || 'ACTIVE') as FUDStatus,
+    status: (row.fud_status || 'ACTIVE') as FUDStatus,
+    workflowStatus: row.status || 'published',
     evidenceFor: row.evidence_for || [],
     evidenceAgainst: row.evidence_against || [],
     debunkSummary: row.debunk_summary || '',
@@ -219,7 +223,8 @@ export function threatToRow(threat: Threat): Record<string, unknown> {
     fair_secondary_loss_usd: threat.fairEstimates.secondaryLossUSD,
     fair_ale: threat.fairEstimates.annualizedLossExpectancy,
     nist_stage: threat.nistStage,
-    status: threat.status,
+    rmf_status: threat.status,
+    status: threat.workflowStatus || 'published',
     remediation_strategies: threat.remediationStrategies,
     related_bips: threat.relatedBIPs,
     evidence_sources: threat.evidenceSources,

@@ -153,6 +153,7 @@ export interface Threat {
   fairEstimates: FAIREstimates;
   nistStage: NistRmfStage;
   status: ThreatStatus;
+  workflowStatus?: string;
   remediationStrategies: RemediationStrategy[];
   relatedBIPs: string[];
   evidenceSources: EvidenceSource[];
@@ -184,6 +185,7 @@ export interface FUDAnalysis {
   category: FUDCategory;
   validityScore: number; // 0-100 (0 = total FUD, 100 = completely valid)
   status: FUDStatus;
+  workflowStatus?: string;
   evidenceFor: string[];
   evidenceAgainst: string[];
   debunkSummary: string;

@@ -19,7 +19,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from('fud_analyses')
     .select('*')
-    .eq('status', 'published')
+    .in('status', ['published', 'under_review'])
     .order('validity_score', { ascending: false });
 
   if (error) {

@@ -38,7 +38,7 @@ export default function ThreatDetailPage() {
     <DashboardLayout>
       <ThreatDetail threat={threat} />
       <div className="mt-6">
-        <VotePanel targetType="threat" targetId={id} submittedBy={threat.submittedBy} itemStatus={threat.status} />
+        <VotePanel targetType="threat" targetId={id} submittedBy={threat.submittedBy} itemStatus={threat.workflowStatus} />
       </div>
       <div className="mt-6">
         <CommentSection targetType="threat" targetId={id} />
