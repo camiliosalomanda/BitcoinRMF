@@ -1,4 +1,4 @@
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || '';
+const BASE_URL = '';
 
 interface ApiOptions extends RequestInit {
   params?: Record<string, string>;
