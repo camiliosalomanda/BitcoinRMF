@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { sanitizeInput } from './security';
 
 // --- Shared enums as Zod ---
 
@@ -48,7 +49,7 @@ export const workflowStatus = z.enum(['draft', 'published', 'archived', 'under_r
 // --- Evidence Source ---
 
 export const evidenceSourceSchema = z.object({
-  title: z.string(),
+  title: z.string().transform(sanitizeInput),
   url: z.string().optional(),
   type: z.enum(['RESEARCH', 'CVE', 'INCIDENT', 'NEWS', 'BIP', 'WHITEPAPER', 'X_POST']),
 });
@@ -58,8 +59,8 @@ export const evidenceSourceSchema = z.object({
 export const remediationStrategySchema = z.object({
   id: z.string(),
   threatId: z.string(),
-  title: z.string(),
-  description: z.string(),
+  title: z.string().transform(sanitizeInput),
+  description: z.string().transform(sanitizeInput),
   effectiveness: z.number().min(0).max(100),
   estimatedCostUSD: z.number().min(0),
   timelineMonths: z.number().min(0),
@@ -81,18 +82,18 @@ export const fairEstimatesSchema = z.object({
 // --- Threat Input (for POST/PUT) ---
 
 export const threatInputSchema = z.object({
-  name: z.string().min(1).max(500),
-  description: z.string().min(1).max(10000),
+  name: z.string().min(1).max(500).transform(sanitizeInput),
+  description: z.string().min(1).max(10000).transform(sanitizeInput),
   strideCategory: strideCategory,
-  strideRationale: z.string().optional(),
+  strideRationale: z.string().transform(sanitizeInput).optional(),
   threatSource: threatSource,
   affectedComponents: z.array(affectedComponent),
-  vulnerability: z.string().optional(),
-  exploitScenario: z.string().optional(),
+  vulnerability: z.string().transform(sanitizeInput).optional(),
+  exploitScenario: z.string().transform(sanitizeInput).optional(),
   likelihood: z.number().int().min(1).max(5),
-  likelihoodJustification: z.string().optional(),
+  likelihoodJustification: z.string().transform(sanitizeInput).optional(),
   impact: z.number().int().min(1).max(5),
-  impactJustification: z.string().optional(),
+  impactJustification: z.string().transform(sanitizeInput).optional(),
   fairEstimates: fairEstimatesSchema.optional(),
   nistStage: nistRmfStage.optional(),
   status: threatStatus.optional(),
@@ -107,15 +108,15 @@ export type ThreatInput = z.infer<typeof threatInputSchema>;
 
 export const bipInputSchema = z.object({
   bipNumber: z.string().min(1),
-  title: z.string().min(1).max(500),
-  summary: z.string().optional(),
+  title: z.string().min(1).max(500).transform(sanitizeInput),
+  summary: z.string().transform(sanitizeInput).optional(),
   recommendation: bipRecommendation,
   necessityScore: z.number().int().min(0).max(100),
   threatsAddressed: z.array(z.string()).optional(),
   mitigationEffectiveness: z.number().int().min(0).max(100).optional(),
   communityConsensus: z.number().int().min(0).max(100).optional(),
   implementationReadiness: z.number().int().min(0).max(100).optional(),
-  economicImpact: z.string().optional(),
+  economicImpact: z.string().transform(sanitizeInput).optional(),
   adoptionPercentage: z.number().int().min(0).max(100).optional(),
   status: bipStatus.optional(),
 });
@@ -125,15 +126,15 @@ export type BIPInput = z.infer<typeof bipInputSchema>;
 // --- FUD Input ---
 
 export const fudInputSchema = z.object({
-  narrative: z.string().min(1).max(2000),
+  narrative: z.string().min(1).max(2000).transform(sanitizeInput),
   category: fudCategory,
   validityScore: z.number().int().min(0).max(100).optional(),
   status: fudStatus.optional(),
   evidenceFor: z.array(z.string()).optional(),
   evidenceAgainst: z.array(z.string()).optional(),
-  debunkSummary: z.string().optional(),
+  debunkSummary: z.string().transform(sanitizeInput).optional(),
   relatedThreats: z.array(z.string()).optional(),
-  priceImpactEstimate: z.string().optional(),
+  priceImpactEstimate: z.string().transform(sanitizeInput).optional(),
 });
 
 export type FUDInput = z.infer<typeof fudInputSchema>;
@@ -175,7 +176,7 @@ export const statusUpdateSchema = z.object({
 export const scoreUpdateSchema = z.object({
   field: z.string(),
   value: z.number(),
-  reason: z.string().min(1, 'Reason is required for score changes'),
+  reason: z.string().min(1, 'Reason is required for score changes').transform(sanitizeInput),
 }).refine((data) => {
   if (data.field === 'likelihood' || data.field === 'impact') {
     return Number.isInteger(data.value) && data.value >= 1 && data.value <= 5;
