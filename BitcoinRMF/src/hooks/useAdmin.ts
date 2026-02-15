@@ -43,10 +43,10 @@ export function useAuditLog(limit = 50) {
 export function usePublishMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ type, id, status }: { type: 'threats' | 'bips' | 'fud'; id: string; status: string }) =>
+    mutationFn: ({ type, id, status, reason }: { type: 'threats' | 'bips' | 'fud'; id: string; status: string; reason?: string }) =>
       apiClient(`/api/${type}/${id}/status`, {
         method: 'PATCH',
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status, reason }),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'pending'] });
@@ -55,5 +55,21 @@ export function usePublishMutation() {
       queryClient.invalidateQueries({ queryKey: ['fud'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
     },
+  });
+}
+
+interface SubmissionItem {
+  id: string;
+  type: 'threat' | 'bip' | 'fud';
+  name: string;
+  status: string;
+  created_at: string;
+  rejection_reason?: string;
+}
+
+export function useMySubmissions() {
+  return useQuery<SubmissionItem[]>({
+    queryKey: ['my-submissions'],
+    queryFn: () => apiClient<SubmissionItem[]>('/api/submissions'),
   });
 }

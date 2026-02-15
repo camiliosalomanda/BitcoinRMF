@@ -12,6 +12,8 @@ export default function PendingPage() {
   const { data: pending = [], isLoading } = useReviewQueue();
   const publishMutation = usePublishMutation();
   const [typeFilter, setTypeFilter] = useState<'' | 'threat' | 'bip' | 'fud'>('');
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
 
   if (roleLoading) {
     return (
@@ -47,7 +49,17 @@ export default function PendingPage() {
   }
 
   function handleReject(type: string, id: string) {
-    publishMutation.mutate({ type: getApiPath(type), id, status: 'archived' });
+    const key = `${type}-${id}`;
+    if (rejectingId === key) return;
+    setRejectingId(key);
+    setRejectReason('');
+  }
+
+  function confirmReject(type: string, id: string) {
+    publishMutation.mutate(
+      { type: getApiPath(type), id, status: 'archived', reason: rejectReason || undefined },
+      { onSettled: () => { setRejectingId(null); setRejectReason(''); } }
+    );
   }
 
   return (
@@ -94,59 +106,95 @@ export default function PendingPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {filtered.map((item) => (
-              <div
-                key={`${item.type}-${item.id}`}
-                className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-4 flex items-center justify-between gap-4"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
-                      item.type === 'threat' ? 'bg-red-400/10 text-red-400' :
-                      item.type === 'bip' ? 'bg-blue-400/10 text-blue-400' :
-                      'bg-yellow-400/10 text-yellow-400'
-                    }`}>
-                      {item.type.toUpperCase()}
-                    </span>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${
-                      item.status === 'draft' ? 'bg-gray-400/10 text-gray-400' :
-                      'bg-yellow-400/10 text-yellow-400'
-                    }`}>
-                      {item.status}
-                    </span>
-                  </div>
-                  <p className="text-sm text-white truncate">{item.name}</p>
-                  <p className="text-[10px] text-gray-500 mt-1">
-                    Submitted by {item.submitted_by_name || 'Unknown'} &middot; {new Date(item.created_at).toLocaleDateString()}
-                  </p>
-                </div>
+            {filtered.map((item) => {
+              const itemKey = `${item.type}-${item.id}`;
+              const isRejecting = rejectingId === itemKey;
 
-                <div className="flex items-center gap-2">
-                  <Link
-                    href={`/${item.type === 'threat' ? 'threats' : item.type === 'bip' ? 'bips' : 'fud'}/${item.id}`}
-                    className="text-xs text-gray-400 hover:text-white px-2 py-1 border border-[#2a2a3a] rounded-lg"
-                  >
-                    View
-                  </Link>
-                  <button
-                    onClick={() => handlePublish(item.type, item.id)}
-                    disabled={publishMutation.isPending}
-                    className="flex items-center gap-1 text-xs text-green-400 hover:text-green-300 px-2 py-1 border border-green-400/20 rounded-lg hover:bg-green-400/5 disabled:opacity-50"
-                  >
-                    <Check size={12} />
-                    Publish
-                  </button>
-                  <button
-                    onClick={() => handleReject(item.type, item.id)}
-                    disabled={publishMutation.isPending}
-                    className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 px-2 py-1 border border-red-400/20 rounded-lg hover:bg-red-400/5 disabled:opacity-50"
-                  >
-                    <X size={12} />
-                    Reject
-                  </button>
+              return (
+                <div
+                  key={itemKey}
+                  className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-4"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                          item.type === 'threat' ? 'bg-red-400/10 text-red-400' :
+                          item.type === 'bip' ? 'bg-blue-400/10 text-blue-400' :
+                          'bg-yellow-400/10 text-yellow-400'
+                        }`}>
+                          {item.type.toUpperCase()}
+                        </span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                          item.status === 'draft' ? 'bg-gray-400/10 text-gray-400' :
+                          'bg-yellow-400/10 text-yellow-400'
+                        }`}>
+                          {item.status}
+                        </span>
+                      </div>
+                      <p className="text-sm text-white truncate">{item.name}</p>
+                      <p className="text-[10px] text-gray-500 mt-1">
+                        Submitted by {item.submitted_by_name || 'Unknown'} &middot; {new Date(item.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/${item.type === 'threat' ? 'threats' : item.type === 'bip' ? 'bips' : 'fud'}/${item.id}`}
+                        className="text-xs text-gray-400 hover:text-white px-2 py-1 border border-[#2a2a3a] rounded-lg"
+                      >
+                        View
+                      </Link>
+                      <button
+                        onClick={() => handlePublish(item.type, item.id)}
+                        disabled={publishMutation.isPending}
+                        className="flex items-center gap-1 text-xs text-green-400 hover:text-green-300 px-2 py-1 border border-green-400/20 rounded-lg hover:bg-green-400/5 disabled:opacity-50"
+                      >
+                        <Check size={12} />
+                        Publish
+                      </button>
+                      <button
+                        onClick={() => isRejecting ? setRejectingId(null) : handleReject(item.type, item.id)}
+                        disabled={publishMutation.isPending}
+                        className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 px-2 py-1 border border-red-400/20 rounded-lg hover:bg-red-400/5 disabled:opacity-50"
+                      >
+                        <X size={12} />
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+
+                  {isRejecting && (
+                    <div className="mt-3 pt-3 border-t border-[#2a2a3a]">
+                      <input
+                        type="text"
+                        value={rejectReason}
+                        onChange={(e) => setRejectReason(e.target.value)}
+                        placeholder="Rejection reason (optional)"
+                        className="w-full bg-[#0a0f1a] border border-[#2a2a3a] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-red-400/40"
+                        autoFocus
+                        onKeyDown={(e) => { if (e.key === 'Enter') confirmReject(item.type, item.id); }}
+                      />
+                      <div className="flex items-center gap-2 mt-2">
+                        <button
+                          onClick={() => confirmReject(item.type, item.id)}
+                          disabled={publishMutation.isPending}
+                          className="text-xs text-red-400 hover:text-red-300 px-3 py-1.5 border border-red-400/20 rounded-lg hover:bg-red-400/5 disabled:opacity-50"
+                        >
+                          Confirm Reject
+                        </button>
+                        <button
+                          onClick={() => { setRejectingId(null); setRejectReason(''); }}
+                          className="text-xs text-gray-500 hover:text-gray-300 px-3 py-1.5 border border-[#2a2a3a] rounded-lg"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

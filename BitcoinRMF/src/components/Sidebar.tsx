@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   Plus,
   BookOpen,
+  ClipboardList,
 } from 'lucide-react';
 import SignInButton from '@/components/auth/SignInButton';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -144,6 +145,17 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
                     </Link>
                   );
                 })}
+                <Link
+                  href="/submissions"
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                    pathname === '/submissions'
+                      ? 'bg-[#f7931a]/10 text-[#f7931a] border border-[#f7931a]/20'
+                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <ClipboardList size={16} />
+                  <span className="text-sm font-medium">My Submissions</span>
+                </Link>
               </>
             )}
 
