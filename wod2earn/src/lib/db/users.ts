@@ -5,7 +5,7 @@ export async function getUserById(id: string): Promise<UserProfile | null> {
   if (!supabaseAdmin) return null;
   const { data, error } = await supabaseAdmin
     .from('users')
-    .select('id, email, username, display_name, avatar_url, level, current_xp, total_xp, streak_count, longest_streak, last_workout_date, workouts_completed, subscription_tier, height_cm, weight_kg, body_type, date_of_birth, gender, fitness_goal, created_at, updated_at')
+    .select('*')
     .eq('id', id)
     .single();
   if (error || !data) return null;
