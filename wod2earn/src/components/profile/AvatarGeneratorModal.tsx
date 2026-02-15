@@ -5,7 +5,7 @@ import { Sparkles, RefreshCw } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import type { UserProfile, BodyMeasurements } from '@/types';
+import type { UserProfile, BodyMeasurements, Appearance } from '@/types';
 
 interface AvatarGeneratorModalProps {
   isOpen: boolean;
@@ -23,6 +23,15 @@ const MEASUREMENT_FIELDS = [
   { key: 'thigh_cm', label: 'Thighs (cm)', placeholder: '55' },
 ] as const;
 
+const APPEARANCE_OPTIONS = {
+  hair_color: { label: 'Hair Color', values: ['Black', 'Brown', 'Blonde', 'Red', 'Auburn', 'Gray/White', 'Other'] },
+  eye_color: { label: 'Eye Color', values: ['Brown', 'Blue', 'Green', 'Hazel', 'Gray', 'Amber'] },
+  hair_length: { label: 'Hair Length', values: ['Bald/Shaved', 'Short', 'Medium', 'Long'] },
+  facial_hair: { label: 'Facial Hair', values: ['None', 'Stubble', 'Goatee', 'Full Beard', 'Mustache'] },
+} as const;
+
+type AppearanceKey = keyof typeof APPEARANCE_OPTIONS;
+
 function formatGoal(g: string): string {
   const map: Record<string, string> = {
     lose_weight: 'Lose Weight',
@@ -35,6 +44,7 @@ function formatGoal(g: string): string {
 
 export function AvatarGeneratorModal({ isOpen, onClose, user, onSave }: AvatarGeneratorModalProps) {
   const existing = user.body_measurements;
+  const existingAppearance = user.appearance;
   const [measurements, setMeasurements] = useState<Record<string, string>>({
     chest_cm: existing?.chest_cm?.toString() ?? '',
     waist_cm: existing?.waist_cm?.toString() ?? '',
@@ -42,6 +52,12 @@ export function AvatarGeneratorModal({ isOpen, onClose, user, onSave }: AvatarGe
     shoulders_cm: existing?.shoulders_cm?.toString() ?? '',
     arm_cm: existing?.arm_cm?.toString() ?? '',
     thigh_cm: existing?.thigh_cm?.toString() ?? '',
+  });
+  const [appearance, setAppearance] = useState<Record<string, string>>({
+    hair_color: existingAppearance?.hair_color ?? '',
+    eye_color: existingAppearance?.eye_color ?? '',
+    hair_length: existingAppearance?.hair_length ?? '',
+    facial_hair: existingAppearance?.facial_hair ?? '',
   });
   const [generating, setGenerating] = useState(false);
   const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
@@ -68,11 +84,21 @@ export function AvatarGeneratorModal({ isOpen, onClose, user, onSave }: AvatarGe
         }
       }
 
+      // Build appearance object — only include non-empty values
+      const appearanceData: Partial<Appearance> = {};
+      for (const key of Object.keys(APPEARANCE_OPTIONS) as AppearanceKey[]) {
+        const val = appearance[key];
+        if (val) {
+          (appearanceData as Record<string, string>)[key] = val;
+        }
+      }
+
       const res = await fetch('/api/avatar/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           measurements: Object.keys(body).length > 0 ? body : undefined,
+          appearance: Object.keys(appearanceData).length > 0 ? appearanceData : undefined,
         }),
       });
 
@@ -112,6 +138,38 @@ export function AvatarGeneratorModal({ isOpen, onClose, user, onSave }: AvatarGe
           <p className="text-sm text-text-secondary">
             {attrs.length > 0 ? attrs.join(' · ') : 'No profile details set — a generic fitness avatar will be generated'}
           </p>
+        </div>
+
+        {/* Appearance */}
+        <div>
+          <h3 className="text-sm font-semibold text-text-secondary mb-3 uppercase tracking-wide">
+            Appearance (Optional)
+          </h3>
+          <p className="text-xs text-text-muted mb-3">
+            Describe your look for a more personalized avatar.
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {(Object.keys(APPEARANCE_OPTIONS) as AppearanceKey[]).map((key) => {
+              const opt = APPEARANCE_OPTIONS[key];
+              return (
+                <div key={key}>
+                  <label className="block text-xs font-medium text-text-secondary mb-1">
+                    {opt.label}
+                  </label>
+                  <select
+                    value={appearance[key]}
+                    onChange={(e) => setAppearance((prev) => ({ ...prev, [key]: e.target.value }))}
+                    className="w-full rounded-lg bg-dark-200 border border-dark-100 text-text-primary text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neon-blue/50"
+                  >
+                    <option value="">— Select —</option>
+                    {opt.values.map((v) => (
+                      <option key={v} value={v}>{v}</option>
+                    ))}
+                  </select>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Body Measurements */}

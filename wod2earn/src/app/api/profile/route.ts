@@ -12,10 +12,23 @@ const FITNESS_GOALS: FitnessGoal[] = ['lose_weight', 'build_muscle', 'maintain',
 const EDITABLE_FIELDS = [
   'display_name', 'avatar_url', 'height_cm', 'weight_kg',
   'body_type', 'date_of_birth', 'gender', 'fitness_goal',
-  'body_measurements',
+  'body_measurements', 'appearance',
 ] as const;
 
 const MEASUREMENT_KEYS = ['chest_cm', 'waist_cm', 'hips_cm', 'shoulders_cm', 'arm_cm', 'thigh_cm'];
+
+const APPEARANCE_KEYS = ['hair_color', 'eye_color', 'hair_length', 'facial_hair'];
+const HAIR_COLORS = ['Black', 'Brown', 'Blonde', 'Red', 'Auburn', 'Gray/White', 'Other'];
+const EYE_COLORS = ['Brown', 'Blue', 'Green', 'Hazel', 'Gray', 'Amber'];
+const HAIR_LENGTHS = ['Bald/Shaved', 'Short', 'Medium', 'Long'];
+const FACIAL_HAIR_OPTIONS = ['None', 'Stubble', 'Goatee', 'Full Beard', 'Mustache'];
+
+const APPEARANCE_VALUES: Record<string, string[]> = {
+  hair_color: HAIR_COLORS,
+  eye_color: EYE_COLORS,
+  hair_length: HAIR_LENGTHS,
+  facial_hair: FACIAL_HAIR_OPTIONS,
+};
 
 export async function GET() {
   try {
@@ -172,6 +185,26 @@ export async function PATCH(request: Request) {
               } else {
                 bmObj[key] = val;
               }
+            }
+          }
+        }
+      }
+    }
+
+    if ('appearance' in updates) {
+      const ap = updates.appearance;
+      if (ap !== null) {
+        if (typeof ap !== 'object' || Array.isArray(ap)) {
+          errors.push('Appearance must be an object');
+        } else {
+          const apObj = ap as Record<string, unknown>;
+          for (const key of Object.keys(apObj)) {
+            if (!APPEARANCE_KEYS.includes(key)) {
+              errors.push(`Invalid appearance key: ${key}`);
+            } else if (typeof apObj[key] !== 'string') {
+              errors.push(`${key} must be a string`);
+            } else if (!APPEARANCE_VALUES[key].includes(apObj[key] as string)) {
+              errors.push(`Invalid value for ${key}`);
             }
           }
         }

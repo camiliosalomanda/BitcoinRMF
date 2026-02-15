@@ -34,6 +34,7 @@ CREATE TABLE users (
   gender gender,
   fitness_goal fitness_goal,
   body_measurements JSONB,
+  appearance JSONB,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

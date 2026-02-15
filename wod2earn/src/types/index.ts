@@ -7,6 +7,13 @@ export interface BodyMeasurements {
   thigh_cm?: number;
 }
 
+export interface Appearance {
+  hair_color?: string;
+  eye_color?: string;
+  hair_length?: string;
+  facial_hair?: string;
+}
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -28,6 +35,7 @@ export interface UserProfile {
   gender: Gender | null;
   fitness_goal: FitnessGoal | null;
   body_measurements: BodyMeasurements | null;
+  appearance: Appearance | null;
   created_at: string;
   updated_at: string;
 }
@@ -42,6 +50,7 @@ export interface ProfileUpdatePayload {
   gender?: Gender | null;
   fitness_goal?: FitnessGoal | null;
   body_measurements?: BodyMeasurements | null;
+  appearance?: Appearance | null;
 }
 
 export type SubscriptionTier = 'free' | 'pro' | 'elite';
