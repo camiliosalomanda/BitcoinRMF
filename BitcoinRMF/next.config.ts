@@ -44,7 +44,7 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' https://platform.twitter.com https://cdn.syndication.twimg.com",
+              "script-src 'self' 'unsafe-inline' https://platform.twitter.com https://cdn.syndication.twimg.com",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https://*.twimg.com https://*.supabase.co",
               "font-src 'self'",
