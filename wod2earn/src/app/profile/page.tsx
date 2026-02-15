@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { User, Zap, Flame, Dumbbell, Trophy, Award, Calendar, Pencil, Ruler, Weight, Target } from 'lucide-react';
+import { User, Zap, Flame, Dumbbell, Trophy, Award, Calendar, Pencil, Ruler, Weight, Target, Sparkles } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
@@ -12,6 +12,7 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Navbar } from '@/components/layout/Navbar';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { ProfileEditModal } from '@/components/profile/ProfileEditModal';
+import { AvatarGeneratorModal } from '@/components/profile/AvatarGeneratorModal';
 import { getLevelInfo } from '@/lib/xp';
 import type { UserProfile, UserAchievement, Workout, Gender, FitnessGoal } from '@/types';
 
@@ -56,6 +57,7 @@ export default function ProfilePage() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
+  const [avatarGenOpen, setAvatarGenOpen] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/auth/signin');
@@ -103,7 +105,16 @@ export default function ProfilePage() {
           {/* Profile Header */}
           <Card glow="blue">
             <div className="flex flex-col sm:flex-row items-center gap-6">
-              <Avatar username={user.username} avatarUrl={user.avatar_url} level={user.level} size="lg" />
+              <div className="flex flex-col items-center gap-1.5">
+                <Avatar username={user.username} avatarUrl={user.avatar_url} level={user.level} size="lg" />
+                <button
+                  onClick={() => setAvatarGenOpen(true)}
+                  className="flex items-center gap-1 text-xs text-neon-pink hover:text-neon-pink/80 transition-colors"
+                >
+                  <Sparkles size={12} />
+                  Generate Avatar
+                </button>
+              </div>
               <div className="text-center sm:text-left flex-1">
                 <div className="flex items-center justify-center sm:justify-start gap-2">
                   <h1 className="font-heading text-2xl font-bold">{user.display_name}</h1>
@@ -269,6 +280,16 @@ export default function ProfilePage() {
         <ProfileEditModal
           isOpen={editOpen}
           onClose={() => setEditOpen(false)}
+          user={user}
+          onSave={(updated) => setUser(updated)}
+        />
+      )}
+
+      {/* Avatar Generator Modal */}
+      {avatarGenOpen && (
+        <AvatarGeneratorModal
+          isOpen={avatarGenOpen}
+          onClose={() => setAvatarGenOpen(false)}
           user={user}
           onSave={(updated) => setUser(updated)}
         />

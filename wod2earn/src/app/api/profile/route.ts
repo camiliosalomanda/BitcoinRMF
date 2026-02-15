@@ -12,7 +12,10 @@ const FITNESS_GOALS: FitnessGoal[] = ['lose_weight', 'build_muscle', 'maintain',
 const EDITABLE_FIELDS = [
   'display_name', 'avatar_url', 'height_cm', 'weight_kg',
   'body_type', 'date_of_birth', 'gender', 'fitness_goal',
+  'body_measurements',
 ] as const;
+
+const MEASUREMENT_KEYS = ['chest_cm', 'waist_cm', 'hips_cm', 'shoulders_cm', 'arm_cm', 'thigh_cm'];
 
 export async function GET() {
   try {
@@ -149,6 +152,29 @@ export async function PATCH(request: Request) {
       const fg = updates.fitness_goal;
       if (fg !== null && !FITNESS_GOALS.includes(fg as FitnessGoal)) {
         errors.push('Invalid fitness goal');
+      }
+    }
+
+    if ('body_measurements' in updates) {
+      const bm = updates.body_measurements;
+      if (bm !== null) {
+        if (typeof bm !== 'object' || Array.isArray(bm)) {
+          errors.push('Body measurements must be an object');
+        } else {
+          const bmObj = bm as Record<string, unknown>;
+          for (const key of Object.keys(bmObj)) {
+            if (!MEASUREMENT_KEYS.includes(key)) {
+              errors.push(`Invalid measurement key: ${key}`);
+            } else {
+              const val = Number(bmObj[key]);
+              if (isNaN(val) || val < 10 || val > 300) {
+                errors.push(`${key} must be between 10 and 300 cm`);
+              } else {
+                bmObj[key] = val;
+              }
+            }
+          }
+        }
       }
     }
 

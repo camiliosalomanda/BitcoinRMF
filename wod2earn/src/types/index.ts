@@ -1,3 +1,12 @@
+export interface BodyMeasurements {
+  chest_cm?: number;
+  waist_cm?: number;
+  hips_cm?: number;
+  shoulders_cm?: number;
+  arm_cm?: number;
+  thigh_cm?: number;
+}
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -18,6 +27,7 @@ export interface UserProfile {
   date_of_birth: string | null;
   gender: Gender | null;
   fitness_goal: FitnessGoal | null;
+  body_measurements: BodyMeasurements | null;
   created_at: string;
   updated_at: string;
 }
@@ -31,6 +41,7 @@ export interface ProfileUpdatePayload {
   date_of_birth?: string | null;
   gender?: Gender | null;
   fitness_goal?: FitnessGoal | null;
+  body_measurements?: BodyMeasurements | null;
 }
 
 export type SubscriptionTier = 'free' | 'pro' | 'elite';
