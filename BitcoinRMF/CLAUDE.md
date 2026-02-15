@@ -44,3 +44,5 @@ supabase/           # Database schema
 - `npm run dev` — Start development server
 - `npm run build` — Production build
 - `npm run lint` — Run ESLint
+- `npm test` — Run all tests once (Vitest)
+- `npm run test:watch` — Run tests in watch mode
