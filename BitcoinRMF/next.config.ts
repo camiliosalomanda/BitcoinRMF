@@ -66,15 +66,15 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        source: '/api/og',
+        source: '/api/:path*',
         headers: [
-          { key: 'Cache-Control', value: 'public, max-age=86400, s-maxage=86400' },
+          { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' },
         ],
       },
       {
-        source: '/api/((?!og).*)',
+        source: '/api/og',
         headers: [
-          { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' },
+          { key: 'Cache-Control', value: 'public, max-age=86400, s-maxage=86400' },
         ],
       },
     ];
