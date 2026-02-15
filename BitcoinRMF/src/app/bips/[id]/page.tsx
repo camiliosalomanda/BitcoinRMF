@@ -10,6 +10,7 @@ import { DetailSkeleton } from '@/components/LoadingSkeleton';
 import { useBIP } from '@/hooks/useBIPs';
 import { useThreats } from '@/hooks/useThreats';
 import { BIPRecommendation } from '@/types';
+import ShareToXButton from '@/components/ShareToXButton';
 import { ArrowLeft } from 'lucide-react';
 
 const RECOMMENDATION_COLORS: Record<BIPRecommendation, string> = {
@@ -74,7 +75,13 @@ export default function BIPDetailPage() {
               <h1 className="text-xl font-bold text-white">{bip.title}</h1>
               <p className="text-sm text-gray-400 mt-2">{bip.summary}</p>
             </div>
-            <ScoreGauge score={bip.necessityScore} label="Necessity" size="lg" />
+            <div className="flex flex-col items-end gap-2">
+              <ScoreGauge score={bip.necessityScore} label="Necessity" size="lg" />
+              <ShareToXButton
+                text={`${bip.bipNumber}: "${bip.title}" \u2014 ${bip.recommendation} (Necessity: ${bip.necessityScore}/100)`}
+                hashtags={['Bitcoin', 'BIP', 'BitcoinRMF']}
+              />
+            </div>
           </div>
         </div>
 

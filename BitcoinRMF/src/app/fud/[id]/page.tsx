@@ -11,6 +11,7 @@ import { useFUDItem } from '@/hooks/useFUD';
 import { useThreats } from '@/hooks/useThreats';
 import { FUDStatus } from '@/types';
 import TweetEmbed from '@/components/evidence/TweetEmbed';
+import ShareToXButton from '@/components/ShareToXButton';
 import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
 
 const X_URL_PATTERN = /^https?:\/\/(twitter\.com|x\.com)\/\w+\/status\/\d+/;
@@ -74,11 +75,15 @@ export default function FUDDetailPage() {
               </div>
               <h1 className="text-xl font-bold text-white">{fud.narrative}</h1>
             </div>
-            <div className="text-right">
+            <div className="text-right space-y-2">
               <p className="text-3xl font-bold" style={{ color: getValidityColor(fud.validityScore) }}>
                 {fud.validityScore}%
               </p>
               <p className="text-[10px] text-gray-500">Validity Score</p>
+              <ShareToXButton
+                text={`Bitcoin FUD Check: "${fud.narrative.length > 100 ? fud.narrative.slice(0, 100) + '\u2026' : fud.narrative}" \u2014 ${fud.status.replace(/_/g, ' ')} (Validity: ${fud.validityScore}%)`}
+                hashtags={['Bitcoin', 'FUD', 'BitcoinRMF']}
+              />
             </div>
           </div>
 

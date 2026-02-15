@@ -8,6 +8,7 @@ import StatusBadge from '@/components/StatusBadge';
 import FAIRScoreCard from './FAIRScoreCard';
 import Link from 'next/link';
 import TweetEmbed from '@/components/evidence/TweetEmbed';
+import ShareToXButton from '@/components/ShareToXButton';
 import { ExternalLink, ArrowLeft, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 
 interface ThreatDetailProps {
@@ -38,9 +39,13 @@ export default function ThreatDetail({ threat }: ThreatDetailProps) {
               <StatusBadge status={threat.status} />
             </div>
           </div>
-          <div className="text-right">
+          <div className="text-right space-y-2">
             <SeverityBadge rating={threat.riskRating} />
             <p className="text-2xl font-bold text-[#f7931a] mt-1">{threat.severityScore}<span className="text-sm text-gray-500">/25</span></p>
+            <ShareToXButton
+              text={`\u26a0\ufe0f ${threat.riskRating} Bitcoin Threat: "${threat.name}" \u2014 Severity ${threat.severityScore}/25 (${threat.strideCategory})`}
+              hashtags={['Bitcoin', 'BitcoinRMF']}
+            />
           </div>
         </div>
         <p className="text-sm text-gray-400 mt-4">{threat.description}</p>
