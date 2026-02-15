@@ -24,7 +24,9 @@ export async function getSupabaseAdmin() {
       const { error } = await client.from('threats').select('id').limit(1);
       if (error && error.code !== 'PGRST116') {
         // PGRST116 = no rows, which is fine
-        console.warn('Supabase not reachable, falling back to seed data:', error.message);
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Supabase not reachable, falling back to seed data:', error.message);
+        }
         _supabaseAvailable = false;
         return null;
       }

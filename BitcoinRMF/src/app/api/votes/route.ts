@@ -2,13 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin, writeAuditLog } from '@/lib/supabase-helpers';
 import { getSessionUser } from '@/lib/admin';
 import { voteInputSchema } from '@/lib/validators';
-
-const VOTE_THRESHOLD = 3;
+import { checkRateLimit, rateLimitResponse } from '@/lib/security';
+import { VOTE_THRESHOLD } from '@/lib/constants';
 
 export async function POST(request: NextRequest) {
   const user = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+  }
+
+  // Rate limit by user
+  const rateCheck = checkRateLimit(`vote:${user.xId}`, 'vote');
+  if (!rateCheck.allowed) {
+    return rateLimitResponse(rateCheck.resetIn);
   }
 
   const body = await request.json();
@@ -61,7 +67,8 @@ export async function POST(request: NextRequest) {
     );
 
   if (voteError) {
-    return NextResponse.json({ error: voteError.message }, { status: 500 });
+    console.error(`[votes] DB error:`, voteError.message);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 
   // Count votes and check threshold
@@ -77,32 +84,47 @@ export async function POST(request: NextRequest) {
 
   let newStatus: string | null = null;
 
-  if (netScore >= VOTE_THRESHOLD) {
-    // Auto-publish
-    await supabase.from(table).update({ status: 'published' }).eq('id', targetId);
-    newStatus = 'published';
+  if (netScore >= VOTE_THRESHOLD || netScore <= -VOTE_THRESHOLD) {
+    // Re-check status to prevent race condition where concurrent votes both trigger threshold
+    const { data: currentItem } = await supabase
+      .from(table).select('status').eq('id', targetId).single();
 
-    await writeAuditLog(supabase, {
-      entityType: targetType,
-      entityId: targetId,
-      action: 'vote_publish',
-      userId: 'community',
-      userName: 'Community Vote',
-      diff: { approvals, rejections, netScore, threshold: VOTE_THRESHOLD },
-    });
-  } else if (netScore <= -VOTE_THRESHOLD) {
-    // Auto-archive
-    await supabase.from(table).update({ status: 'archived' }).eq('id', targetId);
-    newStatus = 'archived';
+    if (currentItem?.status !== 'under_review' && currentItem?.status !== 'draft') {
+      // Already published/archived by another concurrent vote
+      return NextResponse.json({ voteRecorded: true, netScore, newStatus: currentItem?.status });
+    }
 
-    await writeAuditLog(supabase, {
-      entityType: targetType,
-      entityId: targetId,
-      action: 'vote_archive',
-      userId: 'community',
-      userName: 'Community Vote',
-      diff: { approvals, rejections, netScore, threshold: VOTE_THRESHOLD },
-    });
+    if (netScore >= VOTE_THRESHOLD) {
+      // Auto-publish — only if still under review (no-op if already transitioned)
+      await supabase.from(table).update({ status: 'published' })
+        .eq('id', targetId)
+        .in('status', ['under_review', 'draft']);
+      newStatus = 'published';
+
+      await writeAuditLog(supabase, {
+        entityType: targetType,
+        entityId: targetId,
+        action: 'vote_publish',
+        userId: 'community',
+        userName: 'Community Vote',
+        diff: { approvals, rejections, netScore, threshold: VOTE_THRESHOLD },
+      });
+    } else if (netScore <= -VOTE_THRESHOLD) {
+      // Auto-archive — only if still under review (no-op if already transitioned)
+      await supabase.from(table).update({ status: 'archived' })
+        .eq('id', targetId)
+        .in('status', ['under_review', 'draft']);
+      newStatus = 'archived';
+
+      await writeAuditLog(supabase, {
+        entityType: targetType,
+        entityId: targetId,
+        action: 'vote_archive',
+        userId: 'community',
+        userName: 'Community Vote',
+        diff: { approvals, rejections, netScore, threshold: VOTE_THRESHOLD },
+      });
+    }
   }
 
   return NextResponse.json({

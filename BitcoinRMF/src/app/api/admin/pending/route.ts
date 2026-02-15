@@ -20,6 +20,11 @@ export async function GET() {
     supabase.from('fud_analyses').select('*').in('status', ['draft', 'under_review']).order('created_at', { ascending: false }),
   ]);
 
+  if (threatsRes.error || bipsRes.error || fudRes.error) {
+    console.error('[admin/pending] DB error:', threatsRes.error?.message, bipsRes.error?.message, fudRes.error?.message);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+
   return NextResponse.json({
     threats: (threatsRes.data || []).map((r) => threatFromRow(r as ThreatRow)),
     bips: (bipsRes.data || []).map((r) => bipFromRow(r as BIPRow)),

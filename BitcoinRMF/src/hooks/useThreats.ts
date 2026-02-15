@@ -47,6 +47,9 @@ export function useCreateThreat() {
       queryClient.invalidateQueries({ queryKey: ['threats'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
     },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ['threats'] });
+    },
   });
 }
 
@@ -62,6 +65,10 @@ export function useUpdateThreat() {
       queryClient.invalidateQueries({ queryKey: ['threats'] });
       queryClient.invalidateQueries({ queryKey: ['threats', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+    },
+    onError: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['threats'] });
+      queryClient.invalidateQueries({ queryKey: ['threats', variables.id] });
     },
   });
 }

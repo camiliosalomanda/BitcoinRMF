@@ -176,4 +176,13 @@ export const scoreUpdateSchema = z.object({
   field: z.string(),
   value: z.number(),
   reason: z.string().min(1, 'Reason is required for score changes'),
-});
+}).refine((data) => {
+  if (data.field === 'likelihood' || data.field === 'impact') {
+    return Number.isInteger(data.value) && data.value >= 1 && data.value <= 5;
+  }
+  if (data.field === 'fair_vulnerability') {
+    return data.value >= 0 && data.value <= 1;
+  }
+  // All other numeric fields: non-negative
+  return data.value >= 0;
+}, { message: 'Value out of acceptable range for this field' });

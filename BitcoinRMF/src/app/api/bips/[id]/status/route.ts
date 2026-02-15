@@ -32,7 +32,8 @@ export async function PATCH(
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error(`[bips/${id}/status] DB error:`, error.message);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 
   await writeAuditLog(supabase, {

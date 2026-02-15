@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { MessageSquare } from 'lucide-react';
 import { FUDAnalysis, FUDStatus } from '@/types';
-import { useRMFStore } from '@/lib/store';
+import { useUIStore } from '@/lib/store';
 
 interface FUDCardProps {
   fud: FUDAnalysis;
@@ -23,7 +23,7 @@ function getValidityColor(score: number): string {
 }
 
 export default function FUDCard({ fud }: FUDCardProps) {
-  const commentCount = useRMFStore((s) => s.getCommentCount('fud', fud.id));
+  const commentCount = useUIStore((s) => s.getCommentCount('fud', fud.id));
   const barColor = getValidityColor(fud.validityScore);
 
   return (

@@ -11,8 +11,17 @@ interface RateLimitConfig {
 const RATE_LIMITS: Record<string, RateLimitConfig> = {
   default: { windowMs: 60 * 1000, maxRequests: 60 },
   analysis: { windowMs: 60 * 1000, maxRequests: 10 },
+  vote: { windowMs: 60 * 1000, maxRequests: 30 },
   auth: { windowMs: 15 * 60 * 1000, maxRequests: 5 },
 };
+
+// Cleanup stale rate limit entries every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, record] of rateLimitStore) {
+    if (now > record.resetTime) rateLimitStore.delete(key);
+  }
+}, 5 * 60 * 1000);
 
 export function checkRateLimit(
   key: string,

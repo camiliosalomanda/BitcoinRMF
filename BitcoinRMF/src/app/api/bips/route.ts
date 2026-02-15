@@ -23,7 +23,8 @@ export async function GET() {
     .order('necessity_score', { ascending: false });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('[bips] DB error:', error.message);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 
   const bips = (data || []).map((row) => bipFromRow(row as BIPRow));
@@ -69,7 +70,8 @@ export async function POST(request: NextRequest) {
 
   const { data, error } = await supabase.from('bip_evaluations').insert(rowData as Tables['bip_evaluations']['Insert']).select().single();
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error(`[bips/${id}] DB error:`, error.message);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 
   await writeAuditLog(supabase, {

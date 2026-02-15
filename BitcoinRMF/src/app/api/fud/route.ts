@@ -23,7 +23,8 @@ export async function GET() {
     .order('validity_score', { ascending: false });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('[fud] DB error:', error.message);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 
   const fud = (data || []).map((row) => fudFromRow(row as FUDRow));
@@ -66,7 +67,8 @@ export async function POST(request: NextRequest) {
 
   const { data, error } = await supabase.from('fud_analyses').insert(rowData as Tables['fud_analyses']['Insert']).select().single();
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error(`[fud/${id}] DB error:`, error.message);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 
   await writeAuditLog(supabase, {

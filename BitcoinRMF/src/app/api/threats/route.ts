@@ -38,7 +38,8 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await query.order('severity_score', { ascending: false });
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('[threats] DB error:', error.message);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 
   const threats = (data || []).map((row) => threatFromRow(row as ThreatRow));
@@ -110,7 +111,8 @@ export async function POST(request: NextRequest) {
 
   const { data, error } = await supabase.from('threats').insert(rowData as Tables['threats']['Insert']).select().single();
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error(`[threats/${id}] DB error:`, error.message);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 
   await writeAuditLog(supabase, {

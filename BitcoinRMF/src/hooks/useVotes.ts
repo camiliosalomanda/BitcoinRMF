@@ -38,6 +38,9 @@ export function useCastVote() {
       queryClient.invalidateQueries({ queryKey: ['fud'] });
       queryClient.invalidateQueries({ queryKey: ['my-submissions'] });
     },
+    onError: (_error, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['votes', variables.targetType, variables.targetId] });
+    },
   });
 }
 
@@ -56,6 +59,9 @@ export function useRemoveVote() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['votes', variables.targetType, variables.targetId] });
       queryClient.invalidateQueries({ queryKey: ['review-queue'] });
+    },
+    onError: (_error, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['votes', variables.targetType, variables.targetId] });
     },
   });
 }

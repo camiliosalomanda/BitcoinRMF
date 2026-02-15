@@ -83,7 +83,8 @@ export async function PUT(
 
   const { data, error } = await supabase.from('threats').update(updateData as Tables['threats']['Update']).eq('id', id).select().single();
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error(`[threats/${id}] DB error:`, error.message);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 
   await writeAuditLog(supabase, {
@@ -116,7 +117,8 @@ export async function DELETE(
   const user = await getSessionUser();
   const { error } = await supabase.from('threats').delete().eq('id', id);
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error(`[threats/${id}] DB error:`, error.message);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 
   await writeAuditLog(supabase, {

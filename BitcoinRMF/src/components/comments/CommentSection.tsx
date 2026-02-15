@@ -3,7 +3,7 @@
 import { useSession, signIn } from 'next-auth/react';
 import { MessageSquare } from 'lucide-react';
 import { CommentTargetType, Comment } from '@/types';
-import { useRMFStore } from '@/lib/store';
+import { useUIStore } from '@/lib/store';
 import CommentCard from './CommentCard';
 import CommentForm from './CommentForm';
 import { v4 as uuidv4 } from 'uuid';
@@ -15,7 +15,7 @@ interface CommentSectionProps {
 
 export default function CommentSection({ targetType, targetId }: CommentSectionProps) {
   const { data: session } = useSession();
-  const { addComment, getCommentsByTarget } = useRMFStore();
+  const { addComment, getCommentsByTarget } = useUIStore();
 
   const allComments = getCommentsByTarget(targetType, targetId);
   const topLevelComments = allComments

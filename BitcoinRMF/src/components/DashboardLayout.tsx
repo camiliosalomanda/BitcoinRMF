@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Sidebar from './Sidebar';
+import ErrorBoundary from './ErrorBoundary';
 import { useHydration } from '@/lib/useHydration';
 import { Menu, Loader2 } from 'lucide-react';
 
@@ -39,7 +40,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           <span className="text-sm font-semibold text-[#f7931a]">Bitcoin RMF</span>
         </div>
         <div className="p-6 lg:p-8">
-          {children}
+          <ErrorBoundary>{children}</ErrorBoundary>
         </div>
       </main>
     </div>

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { Heart, MessageSquare, Trash2 } from 'lucide-react';
 import { Comment, CommentTargetType } from '@/types';
-import { useRMFStore } from '@/lib/store';
+import { useUIStore } from '@/lib/store';
 import CommentForm from './CommentForm';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -30,7 +30,7 @@ function timeAgo(dateStr: string): string {
 
 export default function CommentCard({ comment, replies, allComments, depth = 0 }: CommentCardProps) {
   const { data: session } = useSession();
-  const { deleteComment, likeComment, addComment } = useRMFStore();
+  const { deleteComment, likeComment, addComment } = useUIStore();
   const [showReplyForm, setShowReplyForm] = useState(false);
 
   const isOwner = session?.user?.xId === comment.author.xId;

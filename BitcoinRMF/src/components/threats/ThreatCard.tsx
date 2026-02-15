@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { MessageSquare } from 'lucide-react';
 import { Threat, LIKELIHOOD_LABELS, IMPACT_LABELS } from '@/types';
-import { useRMFStore } from '@/lib/store';
+import { useUIStore } from '@/lib/store';
 import SeverityBadge from '@/components/SeverityBadge';
 import STRIDEBadge from '@/components/STRIDEBadge';
 import ThreatSourceBadge from '@/components/ThreatSourceBadge';
@@ -14,7 +14,7 @@ interface ThreatCardProps {
 }
 
 export default function ThreatCard({ threat }: ThreatCardProps) {
-  const commentCount = useRMFStore((s) => s.getCommentCount('threat', threat.id));
+  const commentCount = useUIStore((s) => s.getCommentCount('threat', threat.id));
 
   return (
     <Link

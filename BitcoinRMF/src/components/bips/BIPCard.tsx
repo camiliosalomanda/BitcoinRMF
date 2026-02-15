@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { MessageSquare } from 'lucide-react';
 import { BIPEvaluation, BIPRecommendation } from '@/types';
-import { useRMFStore } from '@/lib/store';
+import { useUIStore } from '@/lib/store';
 import ScoreGauge from '@/components/ScoreGauge';
 
 interface BIPCardProps {
@@ -19,7 +19,7 @@ const RECOMMENDATION_COLORS: Record<BIPRecommendation, string> = {
 };
 
 export default function BIPCard({ bip }: BIPCardProps) {
-  const commentCount = useRMFStore((s) => s.getCommentCount('bip', bip.id));
+  const commentCount = useUIStore((s) => s.getCommentCount('bip', bip.id));
 
   return (
     <Link

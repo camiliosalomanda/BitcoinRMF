@@ -65,6 +65,3 @@ export const useUIStore = create<UIStore>()(
     }
   )
 );
-
-// Deprecated alias — use useUIStore instead
-export const useRMFStore = useUIStore;

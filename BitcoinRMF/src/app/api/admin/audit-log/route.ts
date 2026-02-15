@@ -15,7 +15,8 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const entityType = searchParams.get('entityType');
-  const limit = parseInt(searchParams.get('limit') || '50', 10);
+  const rawLimit = parseInt(searchParams.get('limit') || '50', 10);
+  const limit = Math.min(Math.max(isNaN(rawLimit) ? 50 : rawLimit, 1), 500);
 
   let query = supabase
     .from('audit_log')
@@ -29,7 +30,8 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await query;
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('[admin/audit-log] DB error:', error.message);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 
   return NextResponse.json(data || []);

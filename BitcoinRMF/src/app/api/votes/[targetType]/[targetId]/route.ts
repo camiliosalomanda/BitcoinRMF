@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-helpers';
 import { getSessionUser } from '@/lib/admin';
-
-const VOTE_THRESHOLD = 3;
+import { VOTE_THRESHOLD } from '@/lib/constants';
 
 export async function GET(
   _request: NextRequest,
@@ -72,7 +71,8 @@ export async function DELETE(
     .eq('x_id', user.xId);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error(`[votes/${targetType}/${targetId}] DB error:`, error.message);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 
   return NextResponse.json({ deleted: true });
