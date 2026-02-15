@@ -1,48 +1,44 @@
-'use client';
+import type { Metadata } from 'next';
+import { getThreatById } from '@/lib/data';
+import { getBaseUrl } from '@/lib/url';
+import ThreatDetailPageClient from './ThreatDetailPageClient';
 
-import { useParams } from 'next/navigation';
-import DashboardLayout from '@/components/DashboardLayout';
-import ThreatDetail from '@/components/threats/ThreatDetail';
-import VotePanel from '@/components/votes/VotePanel';
-import CommentSection from '@/components/comments/CommentSection';
-import { DetailSkeleton } from '@/components/LoadingSkeleton';
-import { useThreat } from '@/hooks/useThreats';
+interface Props {
+  params: Promise<{ id: string }>;
+}
 
-export default function ThreatDetailPage() {
-  const params = useParams();
-  const id = params.id as string;
-  const { data: threat, isLoading } = useThreat(id);
-
-  if (isLoading) {
-    return (
-      <DashboardLayout>
-        <DetailSkeleton />
-      </DashboardLayout>
-    );
-  }
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  const threat = await getThreatById(id);
+  const baseUrl = getBaseUrl();
 
   if (!threat) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="text-center">
-            <p className="text-lg text-gray-400">Threat not found</p>
-            <p className="text-sm text-gray-600 mt-1">ID: {id}</p>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
+    return { title: 'Threat Not Found — Bitcoin RMF' };
   }
 
-  return (
-    <DashboardLayout>
-      <ThreatDetail threat={threat} />
-      <div className="mt-6">
-        <VotePanel targetType="threat" targetId={id} submittedBy={threat.submittedBy} itemStatus={threat.workflowStatus} />
-      </div>
-      <div className="mt-6">
-        <CommentSection targetType="threat" targetId={id} />
-      </div>
-    </DashboardLayout>
-  );
+  const title = `${threat.name} — ${threat.riskRating} Threat | Bitcoin RMF`;
+  const description = threat.description.length > 160
+    ? threat.description.slice(0, 157) + '…'
+    : threat.description;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: `${baseUrl}/threats/${id}`,
+      images: [{ url: `/api/og?type=threat&id=${id}`, width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [`/api/og?type=threat&id=${id}`],
+    },
+  };
+}
+
+export default function ThreatDetailPage() {
+  return <ThreatDetailPageClient />;
 }

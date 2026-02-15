@@ -1,37 +1,28 @@
-'use client';
+import type { Metadata } from 'next';
+import { getBaseUrl } from '@/lib/url';
+import RiskMatrixPageClient from './RiskMatrixPageClient';
 
-import DashboardLayout from '@/components/DashboardLayout';
-import RiskHeatmap from '@/components/risk-matrix/RiskHeatmap';
-import ShareToXButton from '@/components/ShareToXButton';
-import { useRiskMatrix } from '@/hooks/useRiskMatrix';
+export function generateMetadata(): Metadata {
+  const baseUrl = getBaseUrl();
+
+  return {
+    title: 'Bitcoin Risk Matrix — 5×5 Threat Heatmap | Bitcoin RMF',
+    description: '5×5 heatmap of the Bitcoin threat landscape mapped by Likelihood vs Impact using NIST RMF, FAIR, and STRIDE frameworks.',
+    openGraph: {
+      title: 'Bitcoin Risk Matrix — 5×5 Threat Heatmap | Bitcoin RMF',
+      description: '5×5 heatmap of the Bitcoin threat landscape mapped by Likelihood vs Impact.',
+      url: `${baseUrl}/risk-matrix`,
+      images: [{ url: '/api/og?type=risk-matrix', width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: 'Bitcoin Risk Matrix — 5×5 Threat Heatmap | Bitcoin RMF',
+      description: '5×5 heatmap of the Bitcoin threat landscape mapped by Likelihood vs Impact.',
+      images: ['/api/og?type=risk-matrix'],
+    },
+  };
+}
 
 export default function RiskMatrixPage() {
-  const { data: matrix, isLoading } = useRiskMatrix();
-
-  return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Risk Matrix</h1>
-            <p className="text-gray-500 text-sm mt-1">
-              5&times;5 heatmap of Bitcoin threat landscape — Likelihood vs Impact
-            </p>
-          </div>
-          <ShareToXButton
-            text="Bitcoin Risk Matrix \u2014 5\u00d75 heatmap of the threat landscape mapped by Likelihood vs Impact"
-            hashtags={['Bitcoin', 'RiskManagement', 'BitcoinRMF']}
-          />
-        </div>
-
-        <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-6">
-          {isLoading || !matrix ? (
-            <div className="h-96 bg-gray-800/30 rounded animate-pulse" />
-          ) : (
-            <RiskHeatmap matrix={matrix} />
-          )}
-        </div>
-      </div>
-    </DashboardLayout>
-  );
+  return <RiskMatrixPageClient />;
 }
