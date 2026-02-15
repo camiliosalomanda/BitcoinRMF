@@ -108,6 +108,42 @@ export interface WeeklyXP {
   xp_earned: number;
 }
 
+export type GuildRole = 'admin' | 'moderator' | 'member';
+
+export interface Guild {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  avatar_url: string | null;
+  created_by: string;
+  member_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GuildMember {
+  id: string;
+  guild_id: string;
+  user_id: string;
+  role: GuildRole;
+  joined_at: string;
+}
+
+export interface GuildWithRole extends Guild {
+  role: GuildRole;
+}
+
+export interface GuildMemberEntry {
+  user_id: string;
+  username: string;
+  display_name: string;
+  avatar_url: string | null;
+  level: number;
+  role: GuildRole;
+  joined_at: string;
+}
+
 export interface LevelInfo {
   level: number;
   title: string;
