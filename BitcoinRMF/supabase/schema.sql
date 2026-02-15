@@ -142,7 +142,7 @@ CREATE TABLE IF NOT EXISTS audit_log (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   entity_type TEXT NOT NULL CHECK (entity_type IN ('threat', 'bip', 'fud')),
   entity_id TEXT NOT NULL,
-  action TEXT NOT NULL CHECK (action IN ('create', 'update', 'delete', 'publish', 'archive', 'reject')),
+  action TEXT NOT NULL CHECK (action IN ('create', 'update', 'delete', 'publish', 'archive', 'reject', 'vote_publish', 'vote_archive')),
   user_id TEXT NOT NULL,
   user_name TEXT NOT NULL,
   diff JSONB,
@@ -169,6 +169,22 @@ CREATE TABLE IF NOT EXISTS comments (
 );
 
 -- ===========================================
+-- Votes (community consensus)
+-- ===========================================
+CREATE TABLE IF NOT EXISTS votes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  target_type TEXT NOT NULL CHECK (target_type IN ('threat', 'fud')),
+  target_id TEXT NOT NULL,
+  x_id TEXT NOT NULL,
+  x_username TEXT NOT NULL,
+  x_name TEXT NOT NULL,
+  vote_value INTEGER NOT NULL CHECK (vote_value IN (1, -1)),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(target_type, target_id, x_id)
+);
+
+-- ===========================================
 -- Indexes
 -- ===========================================
 CREATE INDEX IF NOT EXISTS idx_threats_stride ON threats(stride_category);
@@ -185,6 +201,8 @@ CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_log(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_comments_target ON comments(target_type, target_id);
 CREATE INDEX IF NOT EXISTS idx_comments_parent ON comments(parent_id);
 CREATE INDEX IF NOT EXISTS idx_comments_x_id ON comments(x_id);
+CREATE INDEX IF NOT EXISTS idx_votes_target ON votes(target_type, target_id);
+CREATE INDEX IF NOT EXISTS idx_votes_user ON votes(x_id);
 
 -- ===========================================
 -- Row Level Security
@@ -194,6 +212,7 @@ ALTER TABLE bip_evaluations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE fud_analyses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 
 -- Public read for published content
@@ -218,6 +237,10 @@ CREATE POLICY "Authenticated users can insert own comments" ON comments
 
 CREATE POLICY "Users can delete own comments" ON comments
   FOR DELETE USING (x_id = current_setting('request.jwt.claims', true)::json->>'sub');
+
+-- Votes: anyone can read, service role manages writes
+CREATE POLICY "Anyone can read votes" ON votes
+  FOR SELECT USING (true);
 
 -- Audit log: read only for authenticated
 CREATE POLICY "Authenticated read audit log" ON audit_log
@@ -251,4 +274,7 @@ CREATE TRIGGER users_updated_at BEFORE UPDATE ON users
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
 CREATE TRIGGER comments_updated_at BEFORE UPDATE ON comments
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER votes_updated_at BEFORE UPDATE ON votes
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();

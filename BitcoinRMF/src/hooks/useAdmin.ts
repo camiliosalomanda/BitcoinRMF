@@ -58,6 +58,27 @@ export function usePublishMutation() {
   });
 }
 
+interface CommunityReviewItem {
+  id: string;
+  type: 'threat' | 'fud';
+  name: string;
+  status: string;
+  submitted_by: string | null;
+  submitted_by_name: string | null;
+  created_at: string;
+  approvals: number;
+  rejections: number;
+  netScore: number;
+  userVote: 1 | -1 | null;
+}
+
+export function useCommunityReviewQueue() {
+  return useQuery<CommunityReviewItem[]>({
+    queryKey: ['review-queue'],
+    queryFn: () => apiClient<CommunityReviewItem[]>('/api/review'),
+  });
+}
+
 interface SubmissionItem {
   id: string;
   type: 'threat' | 'bip' | 'fud';
@@ -65,6 +86,9 @@ interface SubmissionItem {
   status: string;
   created_at: string;
   rejection_reason?: string;
+  approvals?: number;
+  rejections?: number;
+  netScore?: number;
 }
 
 export function useMySubmissions() {

@@ -3,6 +3,7 @@
 import { useParams } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import ThreatDetail from '@/components/threats/ThreatDetail';
+import VotePanel from '@/components/votes/VotePanel';
 import CommentSection from '@/components/comments/CommentSection';
 import { DetailSkeleton } from '@/components/LoadingSkeleton';
 import { useThreat } from '@/hooks/useThreats';
@@ -36,6 +37,9 @@ export default function ThreatDetailPage() {
   return (
     <DashboardLayout>
       <ThreatDetail threat={threat} />
+      <div className="mt-6">
+        <VotePanel targetType="threat" targetId={id} submittedBy={threat.submittedBy} itemStatus={threat.status} />
+      </div>
       <div className="mt-6">
         <CommentSection targetType="threat" targetId={id} />
       </div>

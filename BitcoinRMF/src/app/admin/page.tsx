@@ -40,7 +40,6 @@ export default function AdminPage() {
   }
 
   const pendingThreats = pending.filter((p) => p.type === 'threat').length;
-  const pendingBIPs = pending.filter((p) => p.type === 'bip').length;
   const pendingFUD = pending.filter((p) => p.type === 'fud').length;
 
   return (
@@ -56,17 +55,16 @@ export default function AdminPage() {
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Link
-            href="/admin/pending"
+            href="/review"
             className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-5 hover:border-[#f7931a]/30 transition-colors"
           >
             <div className="flex items-center gap-3 mb-3">
               <ClipboardList size={18} className="text-[#f7931a]" />
-              <span className="text-sm text-gray-400">Pending Review</span>
+              <span className="text-sm text-gray-400">Community Review</span>
             </div>
             <p className="text-3xl font-bold text-white">{pending.length}</p>
             <div className="mt-2 flex gap-3 text-[10px] text-gray-500">
               <span>{pendingThreats} threats</span>
-              <span>{pendingBIPs} BIPs</span>
               <span>{pendingFUD} FUD</span>
             </div>
           </Link>

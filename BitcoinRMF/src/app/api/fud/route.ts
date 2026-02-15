@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     debunk_summary: parsed.data.debunkSummary || null,
     related_threats: parsed.data.relatedThreats || [],
     price_impact_estimate: parsed.data.priceImpactEstimate || null,
-    status: user.isAdmin ? 'published' : 'draft',
+    status: 'under_review',
     submitted_by: user.xId,
     submitted_by_name: user.xName,
   };

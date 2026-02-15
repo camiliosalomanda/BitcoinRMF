@@ -5,6 +5,7 @@ import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import SeverityBadge from '@/components/SeverityBadge';
 import CommentSection from '@/components/comments/CommentSection';
+import VotePanel from '@/components/votes/VotePanel';
 import { DetailSkeleton } from '@/components/LoadingSkeleton';
 import { useFUDItem } from '@/hooks/useFUD';
 import { useThreats } from '@/hooks/useThreats';
@@ -173,6 +174,9 @@ export default function FUDDetailPage() {
             )}
           </div>
         </div>
+
+        {/* Community Vote */}
+        <VotePanel targetType="fud" targetId={id} submittedBy={fud.submittedBy} itemStatus={fud.status} />
 
         {/* Comments */}
         <CommentSection targetType="fud" targetId={id} />

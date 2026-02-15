@@ -17,6 +17,7 @@ import {
   Plus,
   BookOpen,
   ClipboardList,
+  Vote,
 } from 'lucide-react';
 import SignInButton from '@/components/auth/SignInButton';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -37,7 +38,6 @@ const NAV_ITEMS = [
 
 const SUBMIT_ITEMS = [
   { href: '/threats/submit', label: 'Submit Threat' },
-  { href: '/bips/submit', label: 'Submit BIP' },
   { href: '/fud/submit', label: 'Submit FUD' },
 ];
 
@@ -145,6 +145,17 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
                     </Link>
                   );
                 })}
+                <Link
+                  href="/review"
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                    pathname === '/review'
+                      ? 'bg-[#f7931a]/10 text-[#f7931a] border border-[#f7931a]/20'
+                      : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <Vote size={16} />
+                  <span className="text-sm font-medium">Review Queue</span>
+                </Link>
                 <Link
                   href="/submissions"
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${

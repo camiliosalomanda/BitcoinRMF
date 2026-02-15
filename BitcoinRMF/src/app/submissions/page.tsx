@@ -132,9 +132,6 @@ export default function SubmissionsPage() {
                 <Link href="/threats/submit" className="inline-flex items-center gap-1.5 text-xs text-[#f7931a] hover:text-[#f7931a]/80 px-3 py-1.5 border border-[#f7931a]/20 rounded-lg">
                   <Plus size={12} /> Submit Threat
                 </Link>
-                <Link href="/bips/submit" className="inline-flex items-center gap-1.5 text-xs text-[#f7931a] hover:text-[#f7931a]/80 px-3 py-1.5 border border-[#f7931a]/20 rounded-lg">
-                  <Plus size={12} /> Submit BIP
-                </Link>
                 <Link href="/fud/submit" className="inline-flex items-center gap-1.5 text-xs text-[#f7931a] hover:text-[#f7931a]/80 px-3 py-1.5 border border-[#f7931a]/20 rounded-lg">
                   <Plus size={12} /> Submit FUD
                 </Link>
@@ -162,6 +159,13 @@ export default function SubmissionsPage() {
                     <p className="text-sm text-white truncate">{item.name}</p>
                     <p className="text-[10px] text-gray-500 mt-1">
                       {new Date(item.created_at).toLocaleDateString()}
+                      {(item.status === 'draft' || item.status === 'under_review') && item.approvals !== undefined && (
+                        <span className="ml-2">
+                          <span className="text-green-400">{item.approvals} approve</span>
+                          {' / '}
+                          <span className="text-red-400">{item.rejections} reject</span>
+                        </span>
+                      )}
                     </p>
                   </div>
                   <Link

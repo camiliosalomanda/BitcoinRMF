@@ -158,6 +158,7 @@ export interface Threat {
   evidenceSources: EvidenceSource[];
   dateIdentified: string;
   lastUpdated: string;
+  submittedBy?: string;
 }
 
 export interface BIPEvaluation {
@@ -190,6 +191,19 @@ export interface FUDAnalysis {
   priceImpactEstimate: string;
   lastSeen: string;
   lastUpdated: string;
+  submittedBy?: string;
+}
+
+// --- Votes ---
+
+export type VoteTargetType = 'threat' | 'fud';
+
+export interface VoteSummary {
+  approvals: number;
+  rejections: number;
+  netScore: number;
+  userVote: 1 | -1 | null;
+  threshold: number;
 }
 
 export interface RiskMatrixCell {

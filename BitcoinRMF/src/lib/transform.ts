@@ -51,6 +51,7 @@ export interface ThreatRow {
   related_bips: string[];
   evidence_sources: unknown;
   remediation_strategies?: unknown;
+  submitted_by?: string | null;
   date_identified: string;
   created_at: string;
   updated_at: string;
@@ -86,6 +87,7 @@ export interface FUDRow {
   related_threats: string[];
   price_impact_estimate: string | null;
   last_seen: string;
+  submitted_by?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -150,6 +152,7 @@ export function threatFromRow(row: ThreatRow): Threat {
     evidenceSources: parseEvidenceSources(row.evidence_sources),
     dateIdentified: row.date_identified || row.created_at,
     lastUpdated: row.updated_at,
+    submittedBy: row.submitted_by || undefined,
   };
 }
 
@@ -186,6 +189,7 @@ export function fudFromRow(row: FUDRow): FUDAnalysis {
     priceImpactEstimate: row.price_impact_estimate || '',
     lastSeen: row.last_seen || row.created_at,
     lastUpdated: row.updated_at,
+    submittedBy: row.submitted_by || undefined,
   };
 }
 

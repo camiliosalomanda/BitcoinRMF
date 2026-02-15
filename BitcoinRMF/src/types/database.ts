@@ -259,6 +259,36 @@ export interface Database {
         Update: never;
         Relationships: [];
       };
+      votes: {
+        Row: {
+          id: string;
+          target_type: string;
+          target_id: string;
+          x_id: string;
+          x_username: string;
+          x_name: string;
+          vote_value: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          target_type: string;
+          target_id: string;
+          x_id: string;
+          x_username: string;
+          x_name: string;
+          vote_value: number;
+        };
+        Update: {
+          target_type?: string;
+          target_id?: string;
+          x_id?: string;
+          x_username?: string;
+          x_name?: string;
+          vote_value?: number;
+        };
+        Relationships: [];
+      };
       comments: {
         Row: {
           id: string;

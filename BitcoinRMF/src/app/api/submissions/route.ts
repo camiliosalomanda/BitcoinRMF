@@ -9,6 +9,9 @@ interface SubmissionItem {
   status: string;
   created_at: string;
   rejection_reason?: string;
+  approvals?: number;
+  rejections?: number;
+  netScore?: number;
 }
 
 export async function GET() {
@@ -65,6 +68,35 @@ export async function GET() {
   ];
 
   items.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  // Fetch vote tallies for pending items
+  const pendingIds = items
+    .filter((i) => i.status === 'draft' || i.status === 'under_review')
+    .map((i) => i.id);
+
+  if (pendingIds.length > 0) {
+    const { data: votes } = await supabase
+      .from('votes')
+      .select('target_id, vote_value')
+      .in('target_id', pendingIds);
+
+    const voteMap = new Map<string, { approvals: number; rejections: number }>();
+    for (const vote of votes || []) {
+      const existing = voteMap.get(vote.target_id) || { approvals: 0, rejections: 0 };
+      if (vote.vote_value === 1) existing.approvals++;
+      else existing.rejections++;
+      voteMap.set(vote.target_id, existing);
+    }
+
+    for (const item of items) {
+      const tally = voteMap.get(item.id);
+      if (tally) {
+        item.approvals = tally.approvals;
+        item.rejections = tally.rejections;
+        item.netScore = tally.approvals - tally.rejections;
+      }
+    }
+  }
 
   // Look up rejection reasons from audit_log for archived items
   const archivedIds = items.filter((i) => i.status === 'archived').map((i) => i.id);

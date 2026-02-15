@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
   } as Threat) as Record<string, unknown>;
 
   // Set workflow status to draft for community submissions
-  rowData.status = user.isAdmin ? 'published' : 'draft';
+  rowData.status = 'under_review';
   rowData.rmf_status = parsed.data.status || 'IDENTIFIED';
   rowData.submitted_by = user.xId;
   rowData.submitted_by_name = user.xName;
