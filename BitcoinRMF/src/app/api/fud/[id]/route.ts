@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin, writeAuditLog } from '@/lib/supabase-helpers';
 import { getSessionUser, isAdmin } from '@/lib/admin';
 import { fudInputSchema } from '@/lib/validators';
-import { fudFromRow } from '@/lib/transform';
+import { fudFromRow, type FUDRow } from '@/lib/transform';
 import { SEED_FUD } from '@/lib/seed-data';
+import type { Database } from '@/types/database';
+
+type Tables = Database['public']['Tables'];
 
 export async function GET(
   _request: NextRequest,
@@ -23,7 +26,7 @@ export async function GET(
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  return NextResponse.json(fudFromRow(data as any));
+  return NextResponse.json(fudFromRow(data as FUDRow));
 }
 
 export async function PUT(
@@ -59,7 +62,7 @@ export async function PUT(
   if (parsed.data.relatedThreats !== undefined) updateData.related_threats = parsed.data.relatedThreats;
   if (parsed.data.priceImpactEstimate !== undefined) updateData.price_impact_estimate = parsed.data.priceImpactEstimate;
 
-  const { data, error } = await (supabase.from('fud_analyses') as any).update(updateData).eq('id', id).select().single();
+  const { data, error } = await supabase.from('fud_analyses').update(updateData as Tables['fud_analyses']['Update']).eq('id', id).select().single();
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -73,7 +76,7 @@ export async function PUT(
     diff: updateData as Record<string, unknown>,
   });
 
-  return NextResponse.json(fudFromRow(data as any));
+  return NextResponse.json(fudFromRow(data as FUDRow));
 }
 
 export async function DELETE(
@@ -92,7 +95,7 @@ export async function DELETE(
   }
 
   const user = await getSessionUser();
-  const { error } = await (supabase.from('fud_analyses') as any).delete().eq('id', id);
+  const { error } = await supabase.from('fud_analyses').delete().eq('id', id);
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

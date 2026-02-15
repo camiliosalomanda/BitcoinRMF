@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin, writeAuditLog } from '@/lib/supabase-helpers';
 import { getSessionUser, isAdmin } from '@/lib/admin';
 import { threatInputSchema } from '@/lib/validators';
-import { threatFromRow, threatToRow } from '@/lib/transform';
+import { threatFromRow, threatToRow, type ThreatRow } from '@/lib/transform';
 import { SEED_THREATS } from '@/lib/seed-data';
+import type { Database } from '@/types/database';
+
+type Tables = Database['public']['Tables'];
 
 export async function GET(
   _request: NextRequest,
@@ -23,8 +26,7 @@ export async function GET(
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return NextResponse.json(threatFromRow(data as any));
+  return NextResponse.json(threatFromRow(data as ThreatRow));
 }
 
 export async function PUT(
@@ -79,7 +81,7 @@ export async function PUT(
     updateData.fair_ale = fe.annualizedLossExpectancy;
   }
 
-  const { data, error } = await (supabase.from('threats') as any).update(updateData).eq('id', id).select().single();
+  const { data, error } = await supabase.from('threats').update(updateData as Tables['threats']['Update']).eq('id', id).select().single();
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -93,8 +95,7 @@ export async function PUT(
     diff: updateData as Record<string, unknown>,
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return NextResponse.json(threatFromRow(data as any));
+  return NextResponse.json(threatFromRow(data as ThreatRow));
 }
 
 export async function DELETE(
@@ -113,7 +114,7 @@ export async function DELETE(
   }
 
   const user = await getSessionUser();
-  const { error } = await (supabase.from('threats') as any).delete().eq('id', id);
+  const { error } = await supabase.from('threats').delete().eq('id', id);
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

@@ -81,8 +81,9 @@ export async function POST(request: NextRequest) {
     try {
       analysis = JSON.parse(text);
     } catch {
+      console.error('Failed to parse AI response for FUD analysis');
       return addSecurityHeaders(
-        NextResponse.json({ error: 'Failed to parse AI response', raw: text }, { status: 500 })
+        NextResponse.json({ error: 'Failed to parse AI response' }, { status: 500 })
       );
     }
 
@@ -96,10 +97,10 @@ export async function POST(request: NextRequest) {
     jsonResponse.headers.set('X-RateLimit-Remaining', String(remaining));
     return addSecurityHeaders(jsonResponse);
   } catch (error) {
-    console.error('FUD analysis error:', error);
+    console.error('FUD analysis error:', error instanceof Error ? error.message : 'Unknown error');
     if (error instanceof Anthropic.APIError) {
       return addSecurityHeaders(
-        NextResponse.json({ error: `API Error: ${error.message}` }, { status: error.status || 500 })
+        NextResponse.json({ error: 'AI service temporarily unavailable' }, { status: error.status || 500 })
       );
     }
     return addSecurityHeaders(

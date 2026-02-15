@@ -25,7 +25,7 @@ export async function PATCH(
   }
 
   const user = await getSessionUser();
-  const { data, error } = await (supabase.from('bip_evaluations') as any)
+  const { data, error } = await supabase.from('bip_evaluations')
     .update({ status: parsed.data.status })
     .eq('id', id)
     .select()

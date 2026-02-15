@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin, writeAuditLog } from '@/lib/supabase-helpers';
 import { getSessionUser } from '@/lib/admin';
 import { fudInputSchema } from '@/lib/validators';
-import { fudFromRow } from '@/lib/transform';
+import { fudFromRow, type FUDRow } from '@/lib/transform';
 import { SEED_FUD } from '@/lib/seed-data';
+import type { Database } from '@/types/database';
 import { v4 as uuidv4 } from 'uuid';
+
+type Tables = Database['public']['Tables'];
 
 export async function GET() {
   const supabase = await getSupabaseAdmin();
@@ -23,7 +26,7 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const fud = (data || []).map((row: any) => fudFromRow(row));
+  const fud = (data || []).map((row) => fudFromRow(row as FUDRow));
   return NextResponse.json(fud);
 }
 
@@ -61,7 +64,7 @@ export async function POST(request: NextRequest) {
     submitted_by_name: user.xName,
   };
 
-  const { data, error } = await (supabase.from('fud_analyses') as any).insert(rowData).select().single();
+  const { data, error } = await supabase.from('fud_analyses').insert(rowData as Tables['fud_analyses']['Insert']).select().single();
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -74,5 +77,5 @@ export async function POST(request: NextRequest) {
     userName: user.xName,
   });
 
-  return NextResponse.json(fudFromRow(data as any), { status: 201 });
+  return NextResponse.json(fudFromRow(data as FUDRow), { status: 201 });
 }

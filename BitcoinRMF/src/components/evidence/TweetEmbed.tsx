@@ -2,8 +2,9 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { ExternalLink } from 'lucide-react';
+import DOMPurify from 'dompurify';
 
 interface TweetEmbedProps {
   url: string;
@@ -81,11 +82,18 @@ export default function TweetEmbed({ url }: TweetEmbedProps) {
     );
   }
 
+  const sanitizedHtml = useMemo(() => {
+    return DOMPurify.sanitize(data.html, {
+      ALLOWED_TAGS: ['blockquote', 'a', 'p', 'br', 'span', 'div'],
+      ALLOWED_ATTR: ['href', 'rel', 'target', 'class', 'lang', 'dir', 'data-theme'],
+    });
+  }, [data.html]);
+
   return (
     <div
       ref={containerRef}
       className="tweet-embed [&_blockquote]:!border-[#2a2a3a] [&_blockquote]:!bg-transparent"
-      dangerouslySetInnerHTML={{ __html: data.html }}
+      dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
     />
   );
 }

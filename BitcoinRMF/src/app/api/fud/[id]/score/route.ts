@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin, writeAuditLog } from '@/lib/supabase-helpers';
 import { getSessionUser, isAdmin } from '@/lib/admin';
 import { scoreUpdateSchema } from '@/lib/validators';
+import type { Database } from '@/types/database';
+
+type Tables = Database['public']['Tables'];
 
 export async function PATCH(
   request: NextRequest,
@@ -37,8 +40,8 @@ export async function PATCH(
     return NextResponse.json({ error: `Field '${field}' cannot be updated via score endpoint` }, { status: 400 });
   }
 
-  const { data, error } = await (supabase.from('fud_analyses') as any)
-    .update({ [dbField]: value })
+  const { data, error } = await supabase.from('fud_analyses')
+    .update({ [dbField]: value } as Tables['fud_analyses']['Update'])
     .eq('id', id)
     .select()
     .single();

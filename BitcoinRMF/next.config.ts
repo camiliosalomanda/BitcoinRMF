@@ -40,6 +40,21 @@ const nextConfig: NextConfig = {
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' https://platform.twitter.com https://cdn.syndication.twimg.com",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: https://*.twimg.com https://*.supabase.co",
+              "font-src 'self'",
+              "connect-src 'self' https://*.supabase.co",
+              "frame-src https://platform.twitter.com https://syndication.twitter.com",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+            ].join('; '),
+          },
         ],
       },
       {

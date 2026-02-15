@@ -3,6 +3,9 @@ import { isAdmin, getSessionUser } from '@/lib/admin';
 import { getSupabaseAdmin, writeAuditLog } from '@/lib/supabase-helpers';
 import { threatToRow, bipToRow, fudToRow } from '@/lib/transform';
 import { SEED_THREATS, SEED_BIPS, SEED_FUD } from '@/lib/seed-data';
+import type { Database } from '@/types/database';
+
+type Tables = Database['public']['Tables'];
 
 export async function POST() {
   const admin = await isAdmin();
@@ -27,7 +30,7 @@ export async function POST() {
     delete row.severity_score;
     delete row.risk_rating;
 
-    const { error } = await (supabase.from('threats') as any).upsert(row, { onConflict: 'id' });
+    const { error } = await supabase.from('threats').upsert(row as Tables['threats']['Insert'], { onConflict: 'id' });
     if (error) {
       results.errors.push(`Threat ${threat.id}: ${error.message}`);
     } else {
@@ -62,7 +65,7 @@ export async function POST() {
       status: 'published',
     };
 
-    const { error } = await (supabase.from('bip_evaluations') as any).upsert(insertRow, { onConflict: 'id' });
+    const { error } = await supabase.from('bip_evaluations').upsert(insertRow as Tables['bip_evaluations']['Insert'], { onConflict: 'id' });
     if (error) {
       results.errors.push(`BIP ${bip.id}: ${error.message}`);
     } else {
@@ -87,7 +90,7 @@ export async function POST() {
       last_seen: fud.lastSeen,
     };
 
-    const { error } = await (supabase.from('fud_analyses') as any).upsert(insertRow, { onConflict: 'id' });
+    const { error } = await supabase.from('fud_analyses').upsert(insertRow as Tables['fud_analyses']['Insert'], { onConflict: 'id' });
     if (error) {
       results.errors.push(`FUD ${fud.id}: ${error.message}`);
     } else {

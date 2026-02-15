@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-helpers';
 import { getSessionUser } from '@/lib/admin';
 import { threatInputSchema } from '@/lib/validators';
-import { threatFromRow, threatToRow } from '@/lib/transform';
+import { threatFromRow, threatToRow, type ThreatRow } from '@/lib/transform';
 import { writeAuditLog } from '@/lib/supabase-helpers';
 import { SEED_THREATS } from '@/lib/seed-data';
 import type { Threat } from '@/types';
+import type { Database } from '@/types/database';
 import { v4 as uuidv4 } from 'uuid';
+
+type Tables = Database['public']['Tables'];
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -38,8 +41,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const threats = (data || []).map((row: any) => threatFromRow(row));
+  const threats = (data || []).map((row) => threatFromRow(row as ThreatRow));
   return NextResponse.json(threats);
 }
 
@@ -106,7 +108,7 @@ export async function POST(request: NextRequest) {
   delete rowData.severity_score;
   delete rowData.risk_rating;
 
-  const { data, error } = await (supabase.from('threats') as any).insert(rowData).select().single();
+  const { data, error } = await supabase.from('threats').insert(rowData as Tables['threats']['Insert']).select().single();
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -119,6 +121,5 @@ export async function POST(request: NextRequest) {
     userName: user.xName,
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return NextResponse.json(threatFromRow(data as any), { status: 201 });
+  return NextResponse.json(threatFromRow(data as ThreatRow), { status: 201 });
 }

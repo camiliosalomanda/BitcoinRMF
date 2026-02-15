@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin, writeAuditLog } from '@/lib/supabase-helpers';
 import { getSessionUser, isAdmin } from '@/lib/admin';
 import { bipInputSchema } from '@/lib/validators';
-import { bipFromRow } from '@/lib/transform';
+import { bipFromRow, type BIPRow } from '@/lib/transform';
 import { SEED_BIPS } from '@/lib/seed-data';
+import type { Database } from '@/types/database';
+
+type Tables = Database['public']['Tables'];
 
 export async function GET(
   _request: NextRequest,
@@ -23,7 +26,7 @@ export async function GET(
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  return NextResponse.json(bipFromRow(data as any));
+  return NextResponse.json(bipFromRow(data as BIPRow));
 }
 
 export async function PUT(
@@ -62,7 +65,7 @@ export async function PUT(
   if (parsed.data.adoptionPercentage !== undefined) updateData.adoption_percentage = parsed.data.adoptionPercentage;
   if (parsed.data.status !== undefined) updateData.bip_status = parsed.data.status;
 
-  const { data, error } = await (supabase.from('bip_evaluations') as any).update(updateData).eq('id', id).select().single();
+  const { data, error } = await supabase.from('bip_evaluations').update(updateData as Tables['bip_evaluations']['Update']).eq('id', id).select().single();
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -76,7 +79,7 @@ export async function PUT(
     diff: updateData as Record<string, unknown>,
   });
 
-  return NextResponse.json(bipFromRow(data as any));
+  return NextResponse.json(bipFromRow(data as BIPRow));
 }
 
 export async function DELETE(
@@ -95,7 +98,7 @@ export async function DELETE(
   }
 
   const user = await getSessionUser();
-  const { error } = await (supabase.from('bip_evaluations') as any).delete().eq('id', id);
+  const { error } = await supabase.from('bip_evaluations').delete().eq('id', id);
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

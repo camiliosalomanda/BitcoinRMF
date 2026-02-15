@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { isAdmin } from '@/lib/admin';
 import { getSupabaseAdmin } from '@/lib/supabase-helpers';
-import { threatFromRow, bipFromRow, fudFromRow } from '@/lib/transform';
+import { threatFromRow, bipFromRow, fudFromRow, type ThreatRow, type BIPRow, type FUDRow } from '@/lib/transform';
 
 export async function GET() {
   const admin = await isAdmin();
@@ -21,12 +21,9 @@ export async function GET() {
   ]);
 
   return NextResponse.json({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    threats: (threatsRes.data || []).map((r: any) => threatFromRow(r)),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    bips: (bipsRes.data || []).map((r: any) => bipFromRow(r)),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    fud: (fudRes.data || []).map((r: any) => fudFromRow(r)),
+    threats: (threatsRes.data || []).map((r) => threatFromRow(r as ThreatRow)),
+    bips: (bipsRes.data || []).map((r) => bipFromRow(r as BIPRow)),
+    fud: (fudRes.data || []).map((r) => fudFromRow(r as FUDRow)),
     total: (threatsRes.data?.length || 0) + (bipsRes.data?.length || 0) + (fudRes.data?.length || 0),
   });
 }

@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin, writeAuditLog } from '@/lib/supabase-helpers';
 import { getSessionUser } from '@/lib/admin';
 import { bipInputSchema } from '@/lib/validators';
-import { bipFromRow } from '@/lib/transform';
+import { bipFromRow, type BIPRow } from '@/lib/transform';
 import { SEED_BIPS } from '@/lib/seed-data';
+import type { Database } from '@/types/database';
 import { v4 as uuidv4 } from 'uuid';
+
+type Tables = Database['public']['Tables'];
 
 export async function GET() {
   const supabase = await getSupabaseAdmin();
@@ -23,7 +26,7 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const bips = (data || []).map((row: any) => bipFromRow(row));
+  const bips = (data || []).map((row) => bipFromRow(row as BIPRow));
   return NextResponse.json(bips);
 }
 
@@ -64,7 +67,7 @@ export async function POST(request: NextRequest) {
     submitted_by_name: user.xName,
   };
 
-  const { data, error } = await (supabase.from('bip_evaluations') as any).insert(rowData).select().single();
+  const { data, error } = await supabase.from('bip_evaluations').insert(rowData as Tables['bip_evaluations']['Insert']).select().single();
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -77,5 +80,5 @@ export async function POST(request: NextRequest) {
     userName: user.xName,
   });
 
-  return NextResponse.json(bipFromRow(data as any), { status: 201 });
+  return NextResponse.json(bipFromRow(data as BIPRow), { status: 201 });
 }

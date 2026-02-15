@@ -48,7 +48,7 @@ export async function writeAuditLog(
     diff?: Record<string, unknown>;
   }
 ) {
-  await (supabase.from('audit_log') as any).insert({
+  await supabase.from('audit_log').insert({
     entity_type: entry.entityType,
     entity_id: entry.entityId,
     action: entry.action,

@@ -5,7 +5,7 @@ import { checkRateLimit, getClientId, rateLimitResponse } from '@/lib/security';
 const oembedCache = new Map<string, { html: string; expiry: number }>();
 const CACHE_TTL_MS = 60 * 60 * 1000;
 
-const X_URL_PATTERN = /^https?:\/\/(twitter\.com|x\.com)\/\w+\/status\/\d+/;
+const X_URL_PATTERN = /^https:\/\/(twitter\.com|x\.com)\/[a-zA-Z0-9_]{1,15}\/status\/\d{1,20}$/;
 
 async function fetchJSON<T>(url: string, timeoutMs = 8000): Promise<T | null> {
   try {

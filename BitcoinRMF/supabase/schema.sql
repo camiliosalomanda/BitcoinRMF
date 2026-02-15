@@ -213,8 +213,8 @@ CREATE POLICY "Public read published FUD" ON fud_analyses
 CREATE POLICY "Anyone can read comments" ON comments
   FOR SELECT USING (true);
 
-CREATE POLICY "Authenticated users can insert comments" ON comments
-  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Authenticated users can insert own comments" ON comments
+  FOR INSERT WITH CHECK (x_id = current_setting('request.jwt.claims', true)::json->>'sub');
 
 CREATE POLICY "Users can delete own comments" ON comments
   FOR DELETE USING (x_id = current_setting('request.jwt.claims', true)::json->>'sub');

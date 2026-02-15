@@ -24,7 +24,7 @@ import { getSeverityRating, calculateSeverityScore } from '@/lib/scoring';
 // DB Row → Frontend Type (snake_case → camelCase)
 // =====================================================
 
-interface ThreatRow {
+export interface ThreatRow {
   id: string;
   name: string;
   description: string;
@@ -56,7 +56,7 @@ interface ThreatRow {
   updated_at: string;
 }
 
-interface BIPRow {
+export interface BIPRow {
   id: string;
   bip_number: string;
   title: string;
@@ -74,7 +74,7 @@ interface BIPRow {
   updated_at: string;
 }
 
-interface FUDRow {
+export interface FUDRow {
   id: string;
   narrative: string;
   category: string;
