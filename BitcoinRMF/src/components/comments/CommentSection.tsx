@@ -129,6 +129,7 @@ export default function CommentSection({ targetType, targetId }: CommentSectionP
                 comment={comment}
                 replies={replies}
                 allComments={allComments}
+                onReplyPosted={(content) => setSharePrompt({ content, url: window.location.href })}
               />
             );
           })}

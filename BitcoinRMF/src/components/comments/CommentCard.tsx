@@ -13,6 +13,7 @@ interface CommentCardProps {
   replies: Comment[];
   allComments: Comment[];
   depth?: number;
+  onReplyPosted?: (content: string) => void;
 }
 
 function timeAgo(dateStr: string): string {
@@ -28,7 +29,7 @@ function timeAgo(dateStr: string): string {
   return `${months}mo ago`;
 }
 
-export default function CommentCard({ comment, replies, allComments, depth = 0 }: CommentCardProps) {
+export default function CommentCard({ comment, replies, allComments, depth = 0, onReplyPosted }: CommentCardProps) {
   const { data: session } = useSession();
   const { deleteComment, likeComment, addComment } = useUIStore();
   const [showReplyForm, setShowReplyForm] = useState(false);
@@ -69,6 +70,7 @@ export default function CommentCard({ comment, replies, allComments, depth = 0 }
     };
     addComment(newComment);
     setShowReplyForm(false);
+    onReplyPosted?.(content);
   }
 
   return (
@@ -164,6 +166,7 @@ export default function CommentCard({ comment, replies, allComments, depth = 0 }
             replies={nestedReplies}
             allComments={allComments}
             depth={depth + 1}
+            onReplyPosted={onReplyPosted}
           />
         );
       })}
