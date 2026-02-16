@@ -1,11 +1,10 @@
 'use client';
 
-import { Threat, LIKELIHOOD_LABELS, IMPACT_LABELS, NistRmfStage, BIPRecommendation, FUDStatus } from '@/types';
+import { Threat, BIPRecommendation, FUDStatus } from '@/types';
 import SeverityBadge from '@/components/SeverityBadge';
 import STRIDEBadge from '@/components/STRIDEBadge';
 import ThreatSourceBadge from '@/components/ThreatSourceBadge';
 import StatusBadge from '@/components/StatusBadge';
-import FAIRScoreCard from './FAIRScoreCard';
 import Link from 'next/link';
 import TweetEmbed from '@/components/evidence/TweetEmbed';
 import ShareToXButton from '@/components/ShareToXButton';
@@ -13,7 +12,7 @@ import { useBIPs } from '@/hooks/useBIPs';
 import { useFUD } from '@/hooks/useFUD';
 import { useVulnerabilities } from '@/hooks/useVulnerabilities';
 import { deriveRisks } from '@/lib/scoring';
-import { ExternalLink, ArrowLeft, CheckCircle, Clock, AlertCircle, Bug } from 'lucide-react';
+import { ExternalLink, ArrowLeft, Bug } from 'lucide-react';
 
 const RECOMMENDATION_COLORS: Record<BIPRecommendation, string> = {
   [BIPRecommendation.ESSENTIAL]: 'text-green-400 bg-green-400/10 border-green-400/30',
@@ -33,13 +32,10 @@ interface ThreatDetailProps {
   threat: Threat;
 }
 
-const NIST_STAGES = Object.values(NistRmfStage);
-
 export default function ThreatDetail({ threat }: ThreatDetailProps) {
   const { data: allBIPs = [] } = useBIPs();
   const { data: allFUD = [] } = useFUD();
   const { data: allVulnerabilities = [] } = useVulnerabilities();
-  const currentStageIdx = NIST_STAGES.indexOf(threat.nistStage);
 
   const resolvedBIPs = allBIPs.filter((bip) => threat.relatedBIPs.includes(bip.bipNumber));
   const relatedFUD = allFUD.filter((fud) => fud.relatedThreats.includes(threat.id));
@@ -78,52 +74,12 @@ export default function ThreatDetail({ threat }: ThreatDetailProps) {
         <p className="text-xs text-gray-600 mt-2">STRIDE Rationale: {threat.strideRationale}</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Vulnerability & Exploit */}
-        <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-white mb-3">Vulnerability</h2>
-          <p className="text-sm text-gray-400">{threat.vulnerability}</p>
-          <h2 className="text-sm font-semibold text-white mt-5 mb-3">Exploit Scenario</h2>
-          <p className="text-sm text-gray-400">{threat.exploitScenario}</p>
-        </div>
-
-        {/* FAIR Analysis */}
-        <FAIRScoreCard fair={threat.fairEstimates} />
-      </div>
-
-      {/* Likelihood & Impact */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-white mb-2">
-            Likelihood: {threat.likelihood}/5 ({LIKELIHOOD_LABELS[threat.likelihood]})
-          </h2>
-          <p className="text-sm text-gray-400">{threat.likelihoodJustification}</p>
-        </div>
-        <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-white mb-2">
-            Impact: {threat.impact}/5 ({IMPACT_LABELS[threat.impact]})
-          </h2>
-          <p className="text-sm text-gray-400">{threat.impactJustification}</p>
-        </div>
-      </div>
-
-      {/* NIST RMF Stage */}
+      {/* Vulnerability & Exploit */}
       <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-5">
-        <h2 className="text-sm font-semibold text-white mb-4">NIST RMF Stage</h2>
-        <div className="flex items-center gap-1">
-          {NIST_STAGES.map((stage, idx) => (
-            <div key={stage} className="flex-1">
-              <div className={`h-2 rounded-full ${
-                idx <= currentStageIdx ? 'bg-[#f7931a]' : 'bg-gray-800'
-              }`} />
-              <p className={`text-[9px] mt-1 text-center ${
-                idx === currentStageIdx ? 'text-[#f7931a] font-bold' : idx < currentStageIdx ? 'text-gray-400' : 'text-gray-600'
-              }`}>
-                {stage}
-              </p>
-            </div>
-          ))}
-        </div>
+        <h2 className="text-sm font-semibold text-white mb-3">Vulnerability</h2>
+        <p className="text-sm text-gray-400">{threat.vulnerability}</p>
+        <h2 className="text-sm font-semibold text-white mt-5 mb-3">Exploit Scenario</h2>
+        <p className="text-sm text-gray-400">{threat.exploitScenario}</p>
       </div>
 
       {/* Linked Vulnerabilities */}
@@ -162,100 +118,34 @@ export default function ThreatDetail({ threat }: ThreatDetailProps) {
           <h2 className="text-sm font-semibold text-white mb-4">
             Derived Risks ({derivedRisks.length})
           </h2>
+          <p className="text-[10px] text-gray-600 mb-3">
+            FAIR Analysis, Likelihood, Impact, NIST Stage, and Remediations are shown on each risk detail page.
+          </p>
           <div className="space-y-2">
             {derivedRisks.map((risk) => (
-              <div
+              <Link
                 key={`${risk.threatId}-${risk.vulnerabilityId}`}
-                className="flex items-center justify-between p-3 rounded-lg border border-[#2a2a3a]"
+                href={`/risks/${risk.threatId}/${risk.vulnerabilityId}`}
+                className="flex items-center justify-between p-3 rounded-lg border border-[#2a2a3a] hover:border-[#3a3a4a] transition-colors"
               >
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-white">{risk.threatName}</span>
                     <span className="text-[10px] text-gray-600">&rarr;</span>
-                    <Link href={`/vulnerabilities/${risk.vulnerabilityId}`} className="text-sm text-amber-400 hover:text-[#f7931a]">
+                    <span className="text-sm text-amber-400">
                       {risk.vulnerabilityName}
-                    </Link>
+                    </span>
                   </div>
                   <p className="text-[10px] text-gray-500 mt-0.5">
                     Likelihood {risk.likelihood} &times; Severity {risk.impact} = Risk Score {risk.riskScore}/25
                   </p>
                 </div>
                 <SeverityBadge rating={risk.riskRating} size="sm" />
-              </div>
+              </Link>
             ))}
           </div>
         </div>
       )}
-
-      {/* Remediation Strategies */}
-      <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-white">Remediation Strategies</h2>
-          {linkedVulns.length > 0 && (
-            <span className="text-[10px] text-gray-600">Remediations now tracked on vulnerabilities</span>
-          )}
-        </div>
-        <div className="space-y-3">
-          {threat.remediationStrategies.map((rem) => (
-            <div key={rem.id} className="border border-[#2a2a3a] rounded-lg p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-2">
-                  {rem.status === 'COMPLETED' ? (
-                    <CheckCircle size={16} className="text-green-400 mt-0.5" />
-                  ) : rem.status === 'IN_PROGRESS' ? (
-                    <Clock size={16} className="text-blue-400 mt-0.5" />
-                  ) : (
-                    <AlertCircle size={16} className="text-gray-500 mt-0.5" />
-                  )}
-                  <div>
-                    <h3 className="text-sm font-medium text-white">{rem.title}</h3>
-                    <p className="text-xs text-gray-500 mt-1">{rem.description}</p>
-                  </div>
-                </div>
-                <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${
-                  rem.status === 'COMPLETED' ? 'text-green-400 bg-green-400/10' :
-                  rem.status === 'IN_PROGRESS' ? 'text-blue-400 bg-blue-400/10' :
-                  rem.status === 'PLANNED' ? 'text-yellow-400 bg-yellow-400/10' :
-                  'text-gray-400 bg-gray-400/10'
-                }`}>
-                  {rem.status}
-                </span>
-              </div>
-              <div className="flex items-center gap-4 mt-3 text-[10px] text-gray-500">
-                <span>Effectiveness: {rem.effectiveness}%</span>
-                <span>Timeline: {rem.timelineMonths}mo</span>
-                {rem.relatedBIPs.length > 0 && (
-                  <span className="flex items-center gap-1">
-                    BIPs:{' '}
-                    {rem.relatedBIPs.map((bipNum, i) => {
-                      const bip = allBIPs.find((b) => b.bipNumber === bipNum);
-                      return (
-                        <span key={bipNum}>
-                          {bip ? (
-                            <Link href={`/bips/${bip.id}`} className="text-[#f7931a] hover:underline">
-                              {bipNum}
-                            </Link>
-                          ) : (
-                            <span>{bipNum}</span>
-                          )}
-                          {i < rem.relatedBIPs.length - 1 && ', '}
-                        </span>
-                      );
-                    })}
-                  </span>
-                )}
-              </div>
-              {/* Progress bar */}
-              <div className="mt-2 h-1 bg-gray-800 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-[#f7931a] rounded-full transition-all"
-                  style={{ width: `${rem.effectiveness}%` }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* Related BIPs & Evidence */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -95,26 +95,27 @@ export default function RiskHeatmap({ matrix }: RiskHeatmapProps) {
           <div className="space-y-2">
             {selectedCell.risks.length > 0 ? (
               selectedCell.risks.map((risk) => (
-                <div
+                <Link
                   key={`${risk.threatId}-${risk.vulnerabilityId}`}
+                  href={`/risks/${risk.threatId}/${risk.vulnerabilityId}`}
                   className="flex items-center justify-between p-3 rounded-lg border border-[#2a2a3a] hover:border-[#3a3a4a] transition-colors"
                 >
                   <div>
                     <div className="flex items-center gap-2">
-                      <Link href={`/threats/${risk.threatId}`} className="text-sm text-white hover:text-[#f7931a]">
+                      <span className="text-sm text-white">
                         {risk.threatName}
-                      </Link>
+                      </span>
                       <span className="text-[10px] text-gray-600">&rarr;</span>
-                      <Link href={`/vulnerabilities/${risk.vulnerabilityId}`} className="text-sm text-amber-400 hover:text-[#f7931a]">
+                      <span className="text-sm text-amber-400">
                         {risk.vulnerabilityName}
-                      </Link>
+                      </span>
                     </div>
                     <p className="text-[10px] text-gray-500 mt-0.5">
                       Score: {risk.riskScore}/25
                     </p>
                   </div>
                   <SeverityBadge rating={risk.riskRating} size="sm" />
-                </div>
+                </Link>
               ))
             ) : (
               selectedCell.threats.map((threat) => (

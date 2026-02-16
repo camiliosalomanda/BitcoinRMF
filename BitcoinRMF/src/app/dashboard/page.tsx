@@ -208,21 +208,22 @@ export default function DashboardPage() {
             </div>
             <div className="space-y-3">
               {topRisks.length > 0 ? topRisks.map((risk, idx) => (
-                <div
+                <Link
                   key={`${risk.threatId}-${risk.vulnerabilityId}`}
+                  href={`/risks/${risk.threatId}/${risk.vulnerabilityId}`}
                   className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors"
                 >
                   <span className="text-xs text-gray-600 w-4">{idx + 1}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-gray-200 truncate">
-                      <Link href={`/threats/${risk.threatId}`} className="hover:text-[#f7931a]">{risk.threatName}</Link>
+                      <span>{risk.threatName}</span>
                       <span className="text-gray-600 mx-1">&rarr;</span>
-                      <Link href={`/vulnerabilities/${risk.vulnerabilityId}`} className="text-amber-400 hover:text-[#f7931a]">{risk.vulnerabilityName}</Link>
+                      <span className="text-amber-400">{risk.vulnerabilityName}</span>
                     </p>
                     <p className="text-[10px] text-gray-500">Score: {risk.riskScore}/25</p>
                   </div>
                   <SeverityBadge rating={risk.riskRating} size="sm" />
-                </div>
+                </Link>
               )) : topThreats.map((threat, idx) => (
                 <Link
                   key={threat.id}
