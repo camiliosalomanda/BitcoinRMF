@@ -4,10 +4,9 @@ import { useState, useRef, useCallback } from 'react';
 import { CommentAuthor } from '@/types';
 import { useUIStore } from '@/lib/store';
 
-const DEBOUNCE_MS = 300;
+const DEBOUNCE_MS = 400;
 const MAX_RESULTS = 5;
 const MIN_API_QUERY_LENGTH = 2;
-const LOCAL_THRESHOLD = 3;
 
 export function useMentionSearch() {
   const [results, setResults] = useState<CommentAuthor[]>([]);
@@ -40,8 +39,8 @@ export function useMentionSearch() {
 
       setResults(localMatches.slice(0, MAX_RESULTS));
 
-      // If enough local results or query too short, skip API
-      if (localMatches.length >= LOCAL_THRESHOLD || query.length < MIN_API_QUERY_LENGTH) {
+      // Query too short for API lookup
+      if (query.length < MIN_API_QUERY_LENGTH) {
         setLoading(false);
         return;
       }
