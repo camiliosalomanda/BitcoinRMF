@@ -57,7 +57,7 @@ export default function RiskHeatmap({ matrix }: RiskHeatmapProps) {
                         <span className="text-2xl font-bold text-white">{cell.count || ''}</span>
                         {cell.count > 0 && (
                           <span className="text-[9px] text-white/70 mt-0.5">
-                            {cell.count === 1 ? 'threat' : 'threats'}
+                            {cell.count === 1 ? 'risk' : 'risks'}
                           </span>
                         )}
                       </button>
@@ -89,25 +89,50 @@ export default function RiskHeatmap({ matrix }: RiskHeatmapProps) {
       {selectedCell && selectedCell.count > 0 && (
         <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-5">
           <h3 className="text-sm font-semibold text-white mb-3">
-            Likelihood {selectedCell.likelihood} ({LIKELIHOOD_LABELS[selectedCell.likelihood]}) &times; Impact {selectedCell.impact} ({IMPACT_LABELS[selectedCell.impact]})
-            <span className="text-gray-500 ml-2">— {selectedCell.count} threat{selectedCell.count !== 1 ? 's' : ''}</span>
+            Likelihood {selectedCell.likelihood} ({LIKELIHOOD_LABELS[selectedCell.likelihood]}) &times; Severity {selectedCell.impact} ({IMPACT_LABELS[selectedCell.impact]})
+            <span className="text-gray-500 ml-2">— {selectedCell.count} risk{selectedCell.count !== 1 ? 's' : ''}</span>
           </h3>
           <div className="space-y-2">
-            {selectedCell.threats.map((threat) => (
-              <Link
-                key={threat.id}
-                href={`/threats/${threat.id}`}
-                className="flex items-center justify-between p-3 rounded-lg border border-[#2a2a3a] hover:border-[#3a3a4a] transition-colors"
-              >
-                <div>
-                  <p className="text-sm text-white">{threat.name}</p>
-                  <p className="text-[10px] text-gray-500 mt-0.5">
-                    {threat.strideCategory.replace(/_/g, ' ')} — {threat.threatSource.replace(/_/g, ' ')}
-                  </p>
+            {selectedCell.risks.length > 0 ? (
+              selectedCell.risks.map((risk) => (
+                <div
+                  key={`${risk.threatId}-${risk.vulnerabilityId}`}
+                  className="flex items-center justify-between p-3 rounded-lg border border-[#2a2a3a] hover:border-[#3a3a4a] transition-colors"
+                >
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Link href={`/threats/${risk.threatId}`} className="text-sm text-white hover:text-[#f7931a]">
+                        {risk.threatName}
+                      </Link>
+                      <span className="text-[10px] text-gray-600">&rarr;</span>
+                      <Link href={`/vulnerabilities/${risk.vulnerabilityId}`} className="text-sm text-amber-400 hover:text-[#f7931a]">
+                        {risk.vulnerabilityName}
+                      </Link>
+                    </div>
+                    <p className="text-[10px] text-gray-500 mt-0.5">
+                      Score: {risk.riskScore}/25
+                    </p>
+                  </div>
+                  <SeverityBadge rating={risk.riskRating} size="sm" />
                 </div>
-                <SeverityBadge rating={threat.riskRating} size="sm" />
-              </Link>
-            ))}
+              ))
+            ) : (
+              selectedCell.threats.map((threat) => (
+                <Link
+                  key={threat.id}
+                  href={`/threats/${threat.id}`}
+                  className="flex items-center justify-between p-3 rounded-lg border border-[#2a2a3a] hover:border-[#3a3a4a] transition-colors"
+                >
+                  <div>
+                    <p className="text-sm text-white">{threat.name}</p>
+                    <p className="text-[10px] text-gray-500 mt-0.5">
+                      {threat.strideCategory.replace(/_/g, ' ')} — {threat.threatSource.replace(/_/g, ' ')}
+                    </p>
+                  </div>
+                  <SeverityBadge rating={threat.riskRating} size="sm" />
+                </Link>
+              ))
+            )}
           </div>
         </div>
       )}

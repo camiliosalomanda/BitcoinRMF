@@ -10,10 +10,12 @@ import {
   AffectedComponent,
   RiskRating,
   ThreatStatus,
+  VulnerabilityStatus,
   NistRmfStage,
   BIPRecommendation,
   FUDCategory,
   Threat,
+  Vulnerability,
   BIPEvaluation,
   FUDAnalysis,
   RemediationStrategy,
@@ -21,6 +23,7 @@ import {
 
 import {
   calculateSeverityScore,
+  calculateVulnerabilityScore,
   getSeverityRating,
   calculateFAIRRisk,
 } from '@/lib/scoring';
@@ -68,10 +71,12 @@ export const SEED_THREATS: Threat[] = [
     },
     nistStage: NistRmfStage.PREPARE,
     status: ThreatStatus.MONITORING,
+    vulnerabilityIds: ['vuln-1'],
     remediationStrategies: [
       {
         id: 'rem-1-1',
-        threatId: 'threat-1',
+        parentId: 'threat-1',
+        parentType: 'threat' as const,
         title: 'Post-Quantum Signature Migration',
         description:
           'Develop and deploy a post-quantum signature scheme (e.g., SPHINCS+, CRYSTALS-Dilithium, or Lamport signatures) via a soft fork. Provide a migration window for users to move funds from legacy ECDSA outputs to quantum-resistant addresses.',
@@ -83,7 +88,8 @@ export const SEED_THREATS: Threat[] = [
       },
       {
         id: 'rem-1-2',
-        threatId: 'threat-1',
+        parentId: 'threat-1',
+        parentType: 'threat' as const,
         title: 'Commit-Delay-Reveal Spending Protocol',
         description:
           'Implement a protocol where spending transactions first commit a hash of the transaction without revealing the public key, wait for confirmation, then reveal. This prevents quantum attackers from intercepting the public key in the mempool.',
@@ -149,10 +155,12 @@ export const SEED_THREATS: Threat[] = [
     },
     nistStage: NistRmfStage.MONITOR,
     status: ThreatStatus.MONITORING,
+    vulnerabilityIds: ['vuln-2'],
     remediationStrategies: [
       {
         id: 'rem-2-1',
-        threatId: 'threat-2',
+        parentId: 'threat-2',
+        parentType: 'threat' as const,
         title: 'Hashrate Distribution Monitoring',
         description:
           'Implement continuous monitoring dashboards tracking mining pool hashrate distribution, geographic concentration, and ASIC manufacturer market share. Alert when any entity approaches 30% threshold.',
@@ -164,7 +172,8 @@ export const SEED_THREATS: Threat[] = [
       },
       {
         id: 'rem-2-2',
-        threatId: 'threat-2',
+        parentId: 'threat-2',
+        parentType: 'threat' as const,
         title: 'Increase Confirmation Requirements for Large Transactions',
         description:
           'Encourage exchanges and merchants to require higher confirmation counts (12-60) for large-value transactions, making deep chain reorganizations prohibitively expensive even for majority hashrate holders.',
@@ -230,10 +239,12 @@ export const SEED_THREATS: Threat[] = [
     },
     nistStage: NistRmfStage.MONITOR,
     status: ThreatStatus.MITIGATED,
+    vulnerabilityIds: ['vuln-3'],
     remediationStrategies: [
       {
         id: 'rem-3-1',
-        threatId: 'threat-3',
+        parentId: 'threat-3',
+        parentType: 'threat' as const,
         title: 'SegWit Adoption and Legacy Output Deprecation',
         description:
           'Continue migrating all wallet software and exchange systems to use SegWit (bech32/bech32m) addresses exclusively. Deprecate legacy P2PKH outputs in wallet defaults to eliminate remaining malleability surface.',
@@ -299,10 +310,12 @@ export const SEED_THREATS: Threat[] = [
     },
     nistStage: NistRmfStage.ASSESS,
     status: ThreatStatus.MONITORING,
+    vulnerabilityIds: ['vuln-4'],
     remediationStrategies: [
       {
         id: 'rem-4-1',
-        threatId: 'threat-4',
+        parentId: 'threat-4',
+        parentType: 'threat' as const,
         title: 'Orphan Block Statistical Monitoring',
         description:
           'Deploy monitoring systems that track orphan block rates, block propagation times, and mining pool behavior to detect anomalous patterns consistent with selfish mining strategies.',
@@ -369,10 +382,12 @@ export const SEED_THREATS: Threat[] = [
     },
     nistStage: NistRmfStage.IMPLEMENT,
     status: ThreatStatus.MONITORING,
+    vulnerabilityIds: ['vuln-5'],
     remediationStrategies: [
       {
         id: 'rem-5-1',
-        threatId: 'threat-5',
+        parentId: 'threat-5',
+        parentType: 'threat' as const,
         title: 'Diverse Peer Connection Hardening',
         description:
           'Configure nodes to maintain connections across diverse network segments (Tor, I2P, clearnet), use anchor connections to trusted peers, and limit connections from a single IP range. Bitcoin Core v22+ includes several of these mitigations by default.',
@@ -438,10 +453,12 @@ export const SEED_THREATS: Threat[] = [
     },
     nistStage: NistRmfStage.MONITOR,
     status: ThreatStatus.MONITORING,
+    vulnerabilityIds: ['vuln-6'],
     remediationStrategies: [
       {
         id: 'rem-6-1',
-        threatId: 'threat-6',
+        parentId: 'threat-6',
+        parentType: 'threat' as const,
         title: 'Enhanced Peer Scoring and Diverse Connection Policies',
         description:
           'Implement reputation-based peer scoring that prioritizes long-lived, well-behaved peers over newly connected nodes. Enforce connection diversity across IP ranges, ASNs, and network types (clearnet/Tor/I2P) to limit Sybil influence.',
@@ -453,7 +470,8 @@ export const SEED_THREATS: Threat[] = [
       },
       {
         id: 'rem-6-2',
-        threatId: 'threat-6',
+        parentId: 'threat-6',
+        parentType: 'threat' as const,
         title: 'Dandelion++ Transaction Relay',
         description:
           'Deploy Dandelion++ (BIP proposal) to obscure the origin of transactions by first relaying through a random "stem" path before broadcasting to the wider network, defeating timing-based deanonymization by Sybil nodes.',
@@ -520,10 +538,12 @@ export const SEED_THREATS: Threat[] = [
     },
     nistStage: NistRmfStage.IMPLEMENT,
     status: ThreatStatus.MONITORING,
+    vulnerabilityIds: ['vuln-7'],
     remediationStrategies: [
       {
         id: 'rem-7-1',
-        threatId: 'threat-7',
+        parentId: 'threat-7',
+        parentType: 'threat' as const,
         title: 'BIP-324 Encrypted P2P Transport',
         description:
           'Deploy BIP-324 v2 encrypted P2P transport protocol to authenticate peer connections and encrypt traffic, preventing man-in-the-middle attacks even when BGP routes are hijacked. Encrypted connections make traffic manipulation detectable.',
@@ -535,7 +555,8 @@ export const SEED_THREATS: Threat[] = [
       },
       {
         id: 'rem-7-2',
-        threatId: 'threat-7',
+        parentId: 'threat-7',
+        parentType: 'threat' as const,
         title: 'Multi-Path and Tor/I2P Network Diversity',
         description:
           'Configure critical Bitcoin infrastructure (mining pools, exchanges, full nodes) to maintain redundant connections across clearnet, Tor, and I2P. BGP hijacking cannot affect onion-routed or I2P traffic, providing resilient alternative communication paths.',
@@ -601,10 +622,12 @@ export const SEED_THREATS: Threat[] = [
     },
     nistStage: NistRmfStage.ASSESS,
     status: ThreatStatus.MONITORING,
+    vulnerabilityIds: ['vuln-8'],
     remediationStrategies: [
       {
         id: 'rem-8-1',
-        threatId: 'threat-8',
+        parentId: 'threat-8',
+        parentType: 'threat' as const,
         title: 'Stratum V2 Adoption with Client-Side Block Templates',
         description:
           'Promote adoption of Stratum V2 protocol which allows individual miners to construct their own block templates rather than accepting the pool operator\'s template. This gives miners sovereignty over transaction selection and prevents pool-level censorship.',
@@ -616,7 +639,8 @@ export const SEED_THREATS: Threat[] = [
       },
       {
         id: 'rem-8-2',
-        threatId: 'threat-8',
+        parentId: 'threat-8',
+        parentType: 'threat' as const,
         title: 'Decentralized Mining Pool Protocols (P2Pool/Ocean)',
         description:
           'Support development and adoption of fully decentralized mining pool protocols like P2Pool or Ocean Mining that eliminate the pool operator as a single point of control, distributing block template construction across all participants.',
@@ -683,10 +707,12 @@ export const SEED_THREATS: Threat[] = [
     },
     nistStage: NistRmfStage.IMPLEMENT,
     status: ThreatStatus.MONITORING,
+    vulnerabilityIds: ['vuln-9'],
     remediationStrategies: [
       {
         id: 'rem-9-1',
-        threatId: 'threat-9',
+        parentId: 'threat-9',
+        parentType: 'threat' as const,
         title: 'Reproducible Build Verification Expansion',
         description:
           'Expand the number of independent parties performing Guix reproducible build verification for each Bitcoin Core release. Establish a diverse set of build verifiers across jurisdictions who independently compile and compare binary hashes.',
@@ -698,7 +724,8 @@ export const SEED_THREATS: Threat[] = [
       },
       {
         id: 'rem-9-2',
-        threatId: 'threat-9',
+        parentId: 'threat-9',
+        parentType: 'threat' as const,
         title: 'Formal Code Review and Static Analysis Pipeline',
         description:
           'Implement mandatory formal verification tools, enhanced static analysis (SAST/DAST), and multi-party code review requirements for all consensus-critical code paths. Fund additional full-time code reviewers to reduce single-point-of-failure in the review process.',
@@ -763,10 +790,12 @@ export const SEED_THREATS: Threat[] = [
     },
     nistStage: NistRmfStage.IMPLEMENT,
     status: ThreatStatus.MONITORING,
+    vulnerabilityIds: ['vuln-10'],
     remediationStrategies: [
       {
         id: 'rem-10-1',
-        threatId: 'threat-10',
+        parentId: 'threat-10',
+        parentType: 'threat' as const,
         title: 'Hardware Wallet Security Education Campaign',
         description:
           'Develop and distribute comprehensive security education materials targeting Bitcoin holders, emphasizing seed phrase hygiene, verification procedures for firmware updates, and recognition of common phishing patterns. Partner with hardware wallet manufacturers for co-branded safety guides.',
@@ -778,7 +807,8 @@ export const SEED_THREATS: Threat[] = [
       },
       {
         id: 'rem-10-2',
-        threatId: 'threat-10',
+        parentId: 'threat-10',
+        parentType: 'threat' as const,
         title: 'Multi-Signature and Time-Locked Vault Adoption',
         description:
           'Promote adoption of multi-signature wallet configurations and time-locked vault transactions that prevent immediate fund sweeps even if a single key is compromised. Implement social recovery mechanisms as an alternative to single seed phrase backup.',
@@ -844,10 +874,12 @@ export const SEED_THREATS: Threat[] = [
     },
     nistStage: NistRmfStage.MONITOR,
     status: ThreatStatus.MONITORING,
+    vulnerabilityIds: ['vuln-11'],
     remediationStrategies: [
       {
         id: 'rem-11-1',
-        threatId: 'threat-11',
+        parentId: 'threat-11',
+        parentType: 'threat' as const,
         title: 'Regulatory Engagement and Compliance Frameworks',
         description:
           'Proactively engage with regulators and policymakers to educate them on Bitcoin\'s technology, develop reasonable compliance frameworks, and demonstrate the industry\'s commitment to preventing illicit use while preserving innovation. Support lobbying efforts by organizations like the Bitcoin Policy Institute and Coin Center.',
@@ -859,7 +891,8 @@ export const SEED_THREATS: Threat[] = [
       },
       {
         id: 'rem-11-2',
-        threatId: 'threat-11',
+        parentId: 'threat-11',
+        parentType: 'threat' as const,
         title: 'Decentralized Exchange and P2P Infrastructure',
         description:
           'Support development of decentralized exchange protocols (Bisq, RoboSats, HodlHodl) and P2P trading infrastructure that operates without centralized intermediaries, providing censorship-resistant fiat on/off ramps even in restrictive regulatory environments.',
@@ -926,10 +959,12 @@ export const SEED_THREATS: Threat[] = [
     },
     nistStage: NistRmfStage.IMPLEMENT,
     status: ThreatStatus.MONITORING,
+    vulnerabilityIds: ['vuln-12'],
     remediationStrategies: [
       {
         id: 'rem-12-1',
-        threatId: 'threat-12',
+        parentId: 'threat-12',
+        parentType: 'threat' as const,
         title: 'Confirmation Depth Standards for Merchants',
         description:
           'Establish and promote industry standards for minimum confirmation requirements based on transaction value: 0-conf for micro-payments (<$50), 1 confirmation for small ($50-$1000), 3 confirmations for medium ($1K-$100K), and 6+ confirmations for large transactions (>$100K).',
@@ -995,10 +1030,12 @@ export const SEED_THREATS: Threat[] = [
     },
     nistStage: NistRmfStage.MONITOR,
     status: ThreatStatus.MONITORING,
+    vulnerabilityIds: ['vuln-13'],
     remediationStrategies: [
       {
         id: 'rem-13-1',
-        threatId: 'threat-13',
+        parentId: 'threat-13',
+        parentType: 'threat' as const,
         title: 'UTXO Management and Coin Control Education',
         description:
           'Develop wallet software features and user education materials promoting proper UTXO management: coin control (manual input selection), dust filtering (never spending dust outputs), label-based coin segregation, and CoinJoin integration for regular privacy maintenance.',
@@ -1010,7 +1047,8 @@ export const SEED_THREATS: Threat[] = [
       },
       {
         id: 'rem-13-2',
-        threatId: 'threat-13',
+        parentId: 'threat-13',
+        parentType: 'threat' as const,
         title: 'PayJoin and CoinJoin Protocol Adoption',
         description:
           'Promote widespread adoption of PayJoin (P2EP) for regular transactions and CoinJoin for consolidation, both of which break the common-input-ownership heuristic that chain analysis relies on. Integrate these protocols into mainstream wallet software by default.',
@@ -1076,10 +1114,12 @@ export const SEED_THREATS: Threat[] = [
     },
     nistStage: NistRmfStage.SELECT,
     status: ThreatStatus.MONITORING,
+    vulnerabilityIds: ['vuln-14'],
     remediationStrategies: [
       {
         id: 'rem-14-1',
-        threatId: 'threat-14',
+        parentId: 'threat-14',
+        parentType: 'threat' as const,
         title: 'Consensus Cleanup Soft Fork (Timestamp Rule Fix)',
         description:
           'Implement the consensus cleanup soft fork proposal that fixes the time-warp vulnerability by requiring the first block of each new difficulty period to have a timestamp no earlier than a threshold relative to the last block of the previous period, eliminating the timestamp manipulation vector.',
@@ -1144,10 +1184,12 @@ export const SEED_THREATS: Threat[] = [
     },
     nistStage: NistRmfStage.ASSESS,
     status: ThreatStatus.MONITORING,
+    vulnerabilityIds: ['vuln-15'],
     remediationStrategies: [
       {
         id: 'rem-15-1',
-        threatId: 'threat-15',
+        parentId: 'threat-15',
+        parentType: 'threat' as const,
         title: 'Open-Source ASIC Firmware Development',
         description:
           'Support development and adoption of open-source ASIC firmware (e.g., Braiins OS) that replaces manufacturer firmware, eliminating potential backdoors. Promote industry standards requiring open-source firmware options for all commercial mining hardware.',
@@ -1159,7 +1201,8 @@ export const SEED_THREATS: Threat[] = [
       },
       {
         id: 'rem-15-2',
-        threatId: 'threat-15',
+        parentId: 'threat-15',
+        parentType: 'threat' as const,
         title: 'ASIC Hardware Supply Chain Diversification',
         description:
           'Encourage diversification of ASIC manufacturing across multiple vendors and geographies. Support new ASIC designers (e.g., Intel, Auradine, Block/ASIC) to reduce dependence on the current oligopoly of Chinese manufacturers.',
@@ -1225,10 +1268,12 @@ export const SEED_THREATS: Threat[] = [
     },
     nistStage: NistRmfStage.ASSESS,
     status: ThreatStatus.MONITORING,
+    vulnerabilityIds: ['vuln-16'],
     remediationStrategies: [
       {
         id: 'rem-16-1',
-        threatId: 'threat-16',
+        parentId: 'threat-16',
+        parentType: 'threat' as const,
         title: 'Continuous Tapscript Fuzzing and Formal Verification',
         description:
           'Fund continuous differential fuzzing of Tapscript execution across multiple Bitcoin implementations (Core, btcd, rust-bitcoin) to detect consensus discrepancies. Expand formal verification of libsecp256k1 Schnorr signature code and critical Tapscript opcode implementations.',
@@ -1293,10 +1338,12 @@ export const SEED_THREATS: Threat[] = [
     },
     nistStage: NistRmfStage.MONITOR,
     status: ThreatStatus.MONITORING,
+    vulnerabilityIds: ['vuln-17'],
     remediationStrategies: [
       {
         id: 'rem-17-1',
-        threatId: 'threat-17',
+        parentId: 'threat-17',
+        parentType: 'threat' as const,
         title: 'Bitcoin Mining Energy Transparency Initiative',
         description:
           'Support transparent reporting of Bitcoin mining energy sources through the Bitcoin Mining Council and independent audits. Publish data demonstrating renewable energy percentage, methane capture mining, and stranded energy utilization to counter misleading narratives with verifiable data.',
@@ -1361,10 +1408,12 @@ export const SEED_THREATS: Threat[] = [
     },
     nistStage: NistRmfStage.MONITOR,
     status: ThreatStatus.MONITORING,
+    vulnerabilityIds: ['vuln-18'],
     remediationStrategies: [
       {
         id: 'rem-18-1',
-        threatId: 'threat-18',
+        parentId: 'threat-18',
+        parentType: 'threat' as const,
         title: 'Bitcoin-Only Education and Institutional Research',
         description:
           'Fund independent research organizations and educational initiatives that articulate Bitcoin\'s unique value proposition: true decentralization, fixed supply, censorship resistance, and its role as a neutral monetary protocol. Counter competing narratives with data-driven analysis rather than rhetoric.',
@@ -1388,6 +1437,347 @@ export const SEED_THREATS: Threat[] = [
         type: 'WHITEPAPER',
       },
     ],
+    dateIdentified: '2015-07-30',
+    lastUpdated: '2025-10-22',
+  },
+];
+
+// ===========================================
+// Seed Vulnerabilities
+// ===========================================
+
+export const SEED_VULNERABILITIES: Vulnerability[] = [
+  {
+    id: 'vuln-1',
+    name: 'ECDSA Susceptibility to Quantum Attack',
+    description: 'Bitcoin relies on the secp256k1 elliptic curve for ECDSA signatures. Shor\'s algorithm on a fault-tolerant quantum computer with ~2,500-4,000 logical qubits could solve the ECDLP in polynomial time, breaking the one-way function that protects private keys from public key derivation.',
+    affectedComponents: [AffectedComponent.CRYPTO_STACK, AffectedComponent.WALLET],
+    severity: 5 as const,
+    exploitability: 1 as const,
+    vulnerabilityScore: calculateVulnerabilityScore(5, 1),
+    vulnerabilityRating: getSeverityRating(calculateVulnerabilityScore(5, 1)),
+    status: VulnerabilityStatus.DISCOVERED,
+    remediationStrategies: [
+      { id: 'vrem-1-1', parentId: 'vuln-1', parentType: 'vulnerability', title: 'Post-Quantum Signature Migration', description: 'Deploy a post-quantum signature scheme (SPHINCS+, CRYSTALS-Dilithium, or Lamport) via soft fork with a migration window for legacy ECDSA outputs.', effectiveness: 90, estimatedCostUSD: 50_000_000, timelineMonths: 60, status: 'PLANNED', relatedBIPs: ['BIP-340', 'BIP-341'] },
+      { id: 'vrem-1-2', parentId: 'vuln-1', parentType: 'vulnerability', title: 'Commit-Delay-Reveal Spending Protocol', description: 'Spend transactions first commit a hash without revealing the public key, wait for confirmation, then reveal — preventing quantum attackers from intercepting keys in the mempool.', effectiveness: 60, estimatedCostUSD: 5_000_000, timelineMonths: 24, status: 'PLANNED', relatedBIPs: [] },
+    ],
+    relatedBIPs: ['BIP-340', 'BIP-341'],
+    evidenceSources: [{ title: 'Quantum Computing and Bitcoin ECDSA Analysis', url: 'https://arxiv.org/abs/2106.06593', type: 'RESEARCH' }],
+    dateIdentified: '2019-10-23',
+    lastUpdated: '2025-09-15',
+  },
+  {
+    id: 'vuln-2',
+    name: 'Nakamoto Consensus Majority Hashrate Assumption',
+    description: 'Nakamoto consensus assumes no single entity controls majority hashrate. If this assumption fails, the longest-chain rule allows an attacker to privately mine an alternative chain and broadcast it to overwrite the honest chain, reversing confirmed transactions.',
+    affectedComponents: [AffectedComponent.CONSENSUS, AffectedComponent.MINING],
+    severity: 5 as const,
+    exploitability: 2 as const,
+    vulnerabilityScore: calculateVulnerabilityScore(5, 2),
+    vulnerabilityRating: getSeverityRating(calculateVulnerabilityScore(5, 2)),
+    status: VulnerabilityStatus.CONFIRMED,
+    remediationStrategies: [
+      { id: 'vrem-2-1', parentId: 'vuln-2', parentType: 'vulnerability', title: 'Hashrate Distribution Monitoring', description: 'Continuous monitoring of mining pool hashrate distribution, geographic concentration, and ASIC manufacturer market share with alerts at 30% threshold.', effectiveness: 40, estimatedCostUSD: 500_000, timelineMonths: 6, status: 'IN_PROGRESS', relatedBIPs: [] },
+      { id: 'vrem-2-2', parentId: 'vuln-2', parentType: 'vulnerability', title: 'Increased Confirmation Requirements', description: 'Encourage exchanges and merchants to require higher confirmation counts (12-60) for large-value transactions.', effectiveness: 55, estimatedCostUSD: 100_000, timelineMonths: 3, status: 'IN_PROGRESS', relatedBIPs: [] },
+    ],
+    relatedBIPs: [],
+    evidenceSources: [{ title: 'Majority Is Not Enough: Bitcoin Mining Is Vulnerable', url: 'https://arxiv.org/abs/1311.0243', type: 'RESEARCH' }],
+    dateIdentified: '2008-10-31',
+    lastUpdated: '2025-06-01',
+  },
+  {
+    id: 'vuln-3',
+    name: 'Pre-SegWit Transaction ID Malleability',
+    description: 'Pre-SegWit transactions included signature data in the txid hash. Since DER-encoded ECDSA signatures have multiple valid encodings for the same signature, any relay node could modify the encoding, changing the txid while keeping the transaction valid.',
+    affectedComponents: [AffectedComponent.CONSENSUS, AffectedComponent.WALLET],
+    severity: 3 as const,
+    exploitability: 2 as const,
+    vulnerabilityScore: calculateVulnerabilityScore(3, 2),
+    vulnerabilityRating: getSeverityRating(calculateVulnerabilityScore(3, 2)),
+    status: VulnerabilityStatus.PATCHED,
+    remediationStrategies: [
+      { id: 'vrem-3-1', parentId: 'vuln-3', parentType: 'vulnerability', title: 'SegWit Adoption', description: 'SegWit separates witness data from txid calculation, eliminating malleability for SegWit transactions.', effectiveness: 95, estimatedCostUSD: 200_000, timelineMonths: 12, status: 'COMPLETED', relatedBIPs: ['BIP-141', 'BIP-143', 'BIP-173'] },
+    ],
+    relatedBIPs: ['BIP-141', 'BIP-143', 'BIP-173'],
+    evidenceSources: [{ title: 'BIP-62: Dealing with Malleability', url: 'https://github.com/bitcoin/bips/blob/master/bip-0062.mediawiki', type: 'BIP' }],
+    dateIdentified: '2014-02-07',
+    lastUpdated: '2025-01-10',
+  },
+  {
+    id: 'vuln-4',
+    name: 'Block Discovery Timing Unprovability',
+    description: 'Bitcoin\'s mining protocol has no mechanism to prove when a block was discovered. A miner can withhold blocks and release them strategically to orphan honest miners\' blocks, capturing disproportionate revenue.',
+    affectedComponents: [AffectedComponent.CONSENSUS, AffectedComponent.MINING],
+    severity: 4 as const,
+    exploitability: 3 as const,
+    vulnerabilityScore: calculateVulnerabilityScore(4, 3),
+    vulnerabilityRating: getSeverityRating(calculateVulnerabilityScore(4, 3)),
+    status: VulnerabilityStatus.CONFIRMED,
+    remediationStrategies: [
+      { id: 'vrem-4-1', parentId: 'vuln-4', parentType: 'vulnerability', title: 'Orphan Block Statistical Monitoring', description: 'Statistical analysis of orphan block patterns to detect selfish mining behavior.', effectiveness: 50, estimatedCostUSD: 300_000, timelineMonths: 6, status: 'IN_PROGRESS', relatedBIPs: [] },
+    ],
+    relatedBIPs: [],
+    evidenceSources: [{ title: 'Selfish Mining: A 25% Attack', url: 'https://arxiv.org/abs/1311.0243', type: 'RESEARCH' }],
+    dateIdentified: '2013-11-04',
+    lastUpdated: '2025-03-15',
+  },
+  {
+    id: 'vuln-5',
+    name: 'Addrman Table Manipulation',
+    description: 'Bitcoin Core\'s peer connection management uses a bucketed address table (addrman) that can be manipulated by flooding the victim with attacker IP addresses. Restarting the node causes exclusive connection to attacker-controlled peers.',
+    affectedComponents: [AffectedComponent.P2P_NETWORK, AffectedComponent.FULL_NODE, AffectedComponent.SPV_CLIENT],
+    severity: 3 as const,
+    exploitability: 3 as const,
+    vulnerabilityScore: calculateVulnerabilityScore(3, 3),
+    vulnerabilityRating: getSeverityRating(calculateVulnerabilityScore(3, 3)),
+    status: VulnerabilityStatus.CONFIRMED,
+    remediationStrategies: [
+      { id: 'vrem-5-1', parentId: 'vuln-5', parentType: 'vulnerability', title: 'Diverse Peer Connection Hardening', description: 'Anchor connections, ASN diversity requirements, and encrypted transport to resist eclipse attacks.', effectiveness: 70, estimatedCostUSD: 50_000, timelineMonths: 3, status: 'IN_PROGRESS', relatedBIPs: ['BIP-324'] },
+    ],
+    relatedBIPs: ['BIP-324'],
+    evidenceSources: [{ title: 'Eclipse Attacks on Bitcoin Nodes', url: 'https://eprint.iacr.org/2015/263', type: 'RESEARCH' }],
+    dateIdentified: '2015-03-01',
+    lastUpdated: '2025-04-10',
+  },
+  {
+    id: 'vuln-6',
+    name: 'Permissionless P2P Node Operation',
+    description: 'Bitcoin\'s P2P network is permissionless, requiring no identity verification or stake to operate a node. An attacker can cheaply spin up thousands of nodes to flood the network with dishonest peers.',
+    affectedComponents: [AffectedComponent.P2P_NETWORK, AffectedComponent.FULL_NODE],
+    severity: 3 as const,
+    exploitability: 4 as const,
+    vulnerabilityScore: calculateVulnerabilityScore(3, 4),
+    vulnerabilityRating: getSeverityRating(calculateVulnerabilityScore(3, 4)),
+    status: VulnerabilityStatus.CONFIRMED,
+    remediationStrategies: [
+      { id: 'vrem-6-1', parentId: 'vuln-6', parentType: 'vulnerability', title: 'Enhanced Peer Scoring', description: 'Improved peer scoring algorithms and diverse connection policies to limit Sybil effectiveness.', effectiveness: 55, estimatedCostUSD: 200_000, timelineMonths: 12, status: 'IN_PROGRESS', relatedBIPs: ['BIP-324'] },
+      { id: 'vrem-6-2', parentId: 'vuln-6', parentType: 'vulnerability', title: 'Dandelion++ Transaction Relay', description: 'Privacy-preserving transaction relay to prevent Sybil-based deanonymization.', effectiveness: 65, estimatedCostUSD: 150_000, timelineMonths: 18, status: 'PLANNED', relatedBIPs: [] },
+    ],
+    relatedBIPs: ['BIP-324'],
+    evidenceSources: [{ title: 'Sybil Attacks on Bitcoin P2P Network', url: 'https://eprint.iacr.org/2015/263', type: 'RESEARCH' }],
+    dateIdentified: '2015-06-15',
+    lastUpdated: '2025-05-01',
+  },
+  {
+    id: 'vuln-7',
+    name: 'BGP Unauthenticated Routing',
+    description: 'BGP has no built-in authentication mechanism. Any AS can announce routes for IP prefixes it does not own. Bitcoin\'s pre-BIP-324 P2P protocol transmits data unencrypted, making MITM attacks trivial once traffic is rerouted.',
+    affectedComponents: [AffectedComponent.P2P_NETWORK, AffectedComponent.FULL_NODE, AffectedComponent.MINING],
+    severity: 4 as const,
+    exploitability: 3 as const,
+    vulnerabilityScore: calculateVulnerabilityScore(4, 3),
+    vulnerabilityRating: getSeverityRating(calculateVulnerabilityScore(4, 3)),
+    status: VulnerabilityStatus.CONFIRMED,
+    remediationStrategies: [
+      { id: 'vrem-7-1', parentId: 'vuln-7', parentType: 'vulnerability', title: 'BIP-324 Encrypted P2P Transport', description: 'Encrypted and authenticated transport protocol preventing passive eavesdropping and MITM attacks.', effectiveness: 70, estimatedCostUSD: 300_000, timelineMonths: 12, status: 'IN_PROGRESS', relatedBIPs: ['BIP-324'] },
+      { id: 'vrem-7-2', parentId: 'vuln-7', parentType: 'vulnerability', title: 'Multi-Path Network Diversity', description: 'Use Tor/I2P alongside clearnet to provide routing redundancy.', effectiveness: 60, estimatedCostUSD: 100_000, timelineMonths: 6, status: 'IN_PROGRESS', relatedBIPs: [] },
+    ],
+    relatedBIPs: ['BIP-324'],
+    evidenceSources: [{ title: 'Hijacking Bitcoin: Routing Attacks on Cryptocurrencies', url: 'https://arxiv.org/abs/1605.07524', type: 'RESEARCH' }],
+    dateIdentified: '2017-03-22',
+    lastUpdated: '2025-06-15',
+  },
+  {
+    id: 'vuln-8',
+    name: 'Stratum Pool Operator Block Template Control',
+    description: 'Most mining pools use the Stratum protocol where the pool operator constructs block templates and miners blindly hash them. Pool operators can censor transactions, implement OFAC compliance unilaterally, or collude with other pools.',
+    affectedComponents: [AffectedComponent.MINING, AffectedComponent.CONSENSUS],
+    severity: 4 as const,
+    exploitability: 4 as const,
+    vulnerabilityScore: calculateVulnerabilityScore(4, 4),
+    vulnerabilityRating: getSeverityRating(calculateVulnerabilityScore(4, 4)),
+    status: VulnerabilityStatus.EXPLOITABLE,
+    remediationStrategies: [
+      { id: 'vrem-8-1', parentId: 'vuln-8', parentType: 'vulnerability', title: 'Stratum V2 Adoption', description: 'Client-side block template construction gives individual miners control over transaction selection.', effectiveness: 80, estimatedCostUSD: 2_000_000, timelineMonths: 24, status: 'IN_PROGRESS', relatedBIPs: [] },
+      { id: 'vrem-8-2', parentId: 'vuln-8', parentType: 'vulnerability', title: 'Decentralized Mining Pools', description: 'P2Pool and Ocean-style pools eliminate single operator control over block templates.', effectiveness: 75, estimatedCostUSD: 5_000_000, timelineMonths: 36, status: 'IN_PROGRESS', relatedBIPs: [] },
+    ],
+    relatedBIPs: [],
+    evidenceSources: [{ title: 'Stratum V2 Specification', url: 'https://stratumprotocol.org', type: 'WHITEPAPER' }],
+    dateIdentified: '2020-01-15',
+    lastUpdated: '2025-07-01',
+  },
+  {
+    id: 'vuln-9',
+    name: 'Core Development Supply Chain Concentration',
+    description: 'Bitcoin Core development relies on a small number of maintainers with commit access. The build system, reproducible builds, and binary distribution infrastructure represent potential compromise points.',
+    affectedComponents: [AffectedComponent.FULL_NODE, AffectedComponent.WALLET, AffectedComponent.CONSENSUS],
+    severity: 5 as const,
+    exploitability: 2 as const,
+    vulnerabilityScore: calculateVulnerabilityScore(5, 2),
+    vulnerabilityRating: getSeverityRating(calculateVulnerabilityScore(5, 2)),
+    status: VulnerabilityStatus.CONFIRMED,
+    remediationStrategies: [
+      { id: 'vrem-9-1', parentId: 'vuln-9', parentType: 'vulnerability', title: 'Reproducible Build Verification', description: 'Expand independent Guix reproducible build verification across multiple organizations.', effectiveness: 85, estimatedCostUSD: 1_000_000, timelineMonths: 12, status: 'IN_PROGRESS', relatedBIPs: [] },
+      { id: 'vrem-9-2', parentId: 'vuln-9', parentType: 'vulnerability', title: 'Formal Code Review Pipeline', description: 'Static analysis, formal verification, and expanded code review for all consensus-critical changes.', effectiveness: 70, estimatedCostUSD: 3_000_000, timelineMonths: 18, status: 'IN_PROGRESS', relatedBIPs: [] },
+    ],
+    relatedBIPs: [],
+    evidenceSources: [{ title: 'Bitcoin Core Security Process', url: 'https://github.com/bitcoin/bitcoin/blob/master/SECURITY.md', type: 'WHITEPAPER' }],
+    dateIdentified: '2020-12-01',
+    lastUpdated: '2025-04-20',
+  },
+  {
+    id: 'vuln-10',
+    name: 'Irreversible Transactions with User-Managed Keys',
+    description: 'Bitcoin transactions are irreversible, and private key compromise results in permanent loss. Users must manage their own security (self-custody), and many lack sophistication to distinguish social engineering attacks. No chargebacks make Bitcoin attractive to phishing.',
+    affectedComponents: [AffectedComponent.WALLET],
+    severity: 3 as const,
+    exploitability: 5 as const,
+    vulnerabilityScore: calculateVulnerabilityScore(3, 5),
+    vulnerabilityRating: getSeverityRating(calculateVulnerabilityScore(3, 5)),
+    status: VulnerabilityStatus.EXPLOITABLE,
+    remediationStrategies: [
+      { id: 'vrem-10-1', parentId: 'vuln-10', parentType: 'vulnerability', title: 'Hardware Wallet Security Education', description: 'Large-scale education campaigns promoting hardware wallet adoption and phishing resistance.', effectiveness: 40, estimatedCostUSD: 500_000, timelineMonths: 6, status: 'IN_PROGRESS', relatedBIPs: [] },
+      { id: 'vrem-10-2', parentId: 'vuln-10', parentType: 'vulnerability', title: 'Multi-Sig and Time-Locked Vaults', description: 'Promote multi-signature and time-locked vault constructions to add recovery windows.', effectiveness: 70, estimatedCostUSD: 1_000_000, timelineMonths: 18, status: 'PLANNED', relatedBIPs: ['BIP-174'] },
+    ],
+    relatedBIPs: ['BIP-174'],
+    evidenceSources: [{ title: 'Social Engineering Attack Patterns in Cryptocurrency', url: 'https://arxiv.org/abs/2103.00000', type: 'RESEARCH' }],
+    dateIdentified: '2013-01-01',
+    lastUpdated: '2025-08-10',
+  },
+  {
+    id: 'vuln-11',
+    name: 'Centralized Fiat On/Off Ramps',
+    description: 'Bitcoin\'s fiat on/off ramps (exchanges) are centralized and subject to regulatory jurisdiction. Mining operations require significant physical infrastructure. While P2P usage is censorship-resistant, practical adoption depends on exchange accessibility.',
+    affectedComponents: [AffectedComponent.MINING, AffectedComponent.WALLET],
+    severity: 4 as const,
+    exploitability: 3 as const,
+    vulnerabilityScore: calculateVulnerabilityScore(4, 3),
+    vulnerabilityRating: getSeverityRating(calculateVulnerabilityScore(4, 3)),
+    status: VulnerabilityStatus.EXPLOITABLE,
+    remediationStrategies: [
+      { id: 'vrem-11-1', parentId: 'vuln-11', parentType: 'vulnerability', title: 'Regulatory Engagement', description: 'Proactive engagement with regulators to establish clear compliance frameworks.', effectiveness: 45, estimatedCostUSD: 10_000_000, timelineMonths: 36, status: 'IN_PROGRESS', relatedBIPs: [] },
+      { id: 'vrem-11-2', parentId: 'vuln-11', parentType: 'vulnerability', title: 'Decentralized Exchange Infrastructure', description: 'Build robust P2P and DEX infrastructure as regulatory-resistant alternatives.', effectiveness: 55, estimatedCostUSD: 5_000_000, timelineMonths: 24, status: 'IN_PROGRESS', relatedBIPs: [] },
+    ],
+    relatedBIPs: [],
+    evidenceSources: [{ title: 'Global Cryptocurrency Regulatory Landscape', url: 'https://www.fatf-gafi.org', type: 'NEWS' }],
+    dateIdentified: '2017-09-01',
+    lastUpdated: '2025-09-01',
+  },
+  {
+    id: 'vuln-12',
+    name: 'Zero-Confirmation Transaction Replaceability',
+    description: 'Bitcoin transactions are not final until sufficient confirmations. Zero-confirmation transactions are vulnerable to replacement by conflicting transactions with higher fees (RBF) or through miner collusion. SPV clients are especially vulnerable.',
+    affectedComponents: [AffectedComponent.CONSENSUS, AffectedComponent.WALLET, AffectedComponent.SPV_CLIENT],
+    severity: 4 as const,
+    exploitability: 3 as const,
+    vulnerabilityScore: calculateVulnerabilityScore(4, 3),
+    vulnerabilityRating: getSeverityRating(calculateVulnerabilityScore(4, 3)),
+    status: VulnerabilityStatus.CONFIRMED,
+    remediationStrategies: [
+      { id: 'vrem-12-1', parentId: 'vuln-12', parentType: 'vulnerability', title: 'Confirmation Depth Standards', description: 'Industry standards for minimum confirmation depths based on transaction value.', effectiveness: 75, estimatedCostUSD: 100_000, timelineMonths: 6, status: 'IN_PROGRESS', relatedBIPs: [] },
+    ],
+    relatedBIPs: [],
+    evidenceSources: [{ title: 'Analysis of Double-Spend Attacks on Bitcoin', url: 'https://arxiv.org/abs/1402.2009', type: 'RESEARCH' }],
+    dateIdentified: '2011-07-15',
+    lastUpdated: '2025-03-01',
+  },
+  {
+    id: 'vuln-13',
+    name: 'UTXO Transparency and Chain Analysis',
+    description: 'Bitcoin\'s UTXO model and transparent blockchain enable chain analysis. When a wallet spends multiple UTXOs in a single transaction, the common-input-ownership heuristic links all input addresses. Change output detection further erodes privacy.',
+    affectedComponents: [AffectedComponent.WALLET, AffectedComponent.P2P_NETWORK],
+    severity: 2 as const,
+    exploitability: 5 as const,
+    vulnerabilityScore: calculateVulnerabilityScore(2, 5),
+    vulnerabilityRating: getSeverityRating(calculateVulnerabilityScore(2, 5)),
+    status: VulnerabilityStatus.EXPLOITABLE,
+    remediationStrategies: [
+      { id: 'vrem-13-1', parentId: 'vuln-13', parentType: 'vulnerability', title: 'UTXO Management Education', description: 'Educate users on coin control, UTXO management, and avoiding address reuse.', effectiveness: 60, estimatedCostUSD: 300_000, timelineMonths: 12, status: 'IN_PROGRESS', relatedBIPs: [] },
+      { id: 'vrem-13-2', parentId: 'vuln-13', parentType: 'vulnerability', title: 'PayJoin and CoinJoin Adoption', description: 'Promote PayJoin (BIP-78) and CoinJoin protocols to break the common-input-ownership heuristic.', effectiveness: 70, estimatedCostUSD: 1_000_000, timelineMonths: 24, status: 'PLANNED', relatedBIPs: ['BIP-78'] },
+    ],
+    relatedBIPs: ['BIP-78'],
+    evidenceSources: [{ title: 'A Fistful of Bitcoins: Characterizing Payments Among Men with No Names', url: 'https://cseweb.ucsd.edu/~smeiklejohn/files/imc13.pdf', type: 'RESEARCH' }],
+    dateIdentified: '2013-10-01',
+    lastUpdated: '2025-06-20',
+  },
+  {
+    id: 'vuln-14',
+    name: 'Difficulty Adjustment Timestamp Off-by-One',
+    description: 'Bitcoin\'s difficulty adjustment has a known off-by-one bug where the calculation uses the timestamp of the first block in the period vs the last block, allowing timestamp manipulation to skew the perceived elapsed time.',
+    affectedComponents: [AffectedComponent.CONSENSUS, AffectedComponent.MINING],
+    severity: 4 as const,
+    exploitability: 2 as const,
+    vulnerabilityScore: calculateVulnerabilityScore(4, 2),
+    vulnerabilityRating: getSeverityRating(calculateVulnerabilityScore(4, 2)),
+    status: VulnerabilityStatus.CONFIRMED,
+    remediationStrategies: [
+      { id: 'vrem-14-1', parentId: 'vuln-14', parentType: 'vulnerability', title: 'Consensus Cleanup Soft Fork', description: 'Fix the timestamp validation off-by-one bug via a consensus cleanup soft fork.', effectiveness: 95, estimatedCostUSD: 500_000, timelineMonths: 18, status: 'PLANNED', relatedBIPs: [] },
+    ],
+    relatedBIPs: [],
+    evidenceSources: [{ title: 'The Bitcoin Time-Warp Attack', url: 'https://bitcointalk.org', type: 'RESEARCH' }],
+    dateIdentified: '2010-08-01',
+    lastUpdated: '2025-02-15',
+  },
+  {
+    id: 'vuln-15',
+    name: 'Proprietary ASIC Firmware',
+    description: 'ASIC mining hardware runs proprietary firmware with limited audit capability. The supply chain is concentrated among few manufacturers. Firmware updates are delivered without cryptographic verification.',
+    affectedComponents: [AffectedComponent.MINING],
+    severity: 4 as const,
+    exploitability: 3 as const,
+    vulnerabilityScore: calculateVulnerabilityScore(4, 3),
+    vulnerabilityRating: getSeverityRating(calculateVulnerabilityScore(4, 3)),
+    status: VulnerabilityStatus.CONFIRMED,
+    remediationStrategies: [
+      { id: 'vrem-15-1', parentId: 'vuln-15', parentType: 'vulnerability', title: 'Open-Source ASIC Firmware', description: 'Develop and promote open-source firmware alternatives for major ASIC platforms.', effectiveness: 80, estimatedCostUSD: 3_000_000, timelineMonths: 24, status: 'IN_PROGRESS', relatedBIPs: [] },
+      { id: 'vrem-15-2', parentId: 'vuln-15', parentType: 'vulnerability', title: 'Supply Chain Diversification', description: 'Support new ASIC manufacturers to reduce concentration risk.', effectiveness: 60, estimatedCostUSD: 50_000_000, timelineMonths: 48, status: 'PLANNED', relatedBIPs: [] },
+    ],
+    relatedBIPs: [],
+    evidenceSources: [{ title: 'ASIC Supply Chain Analysis', url: 'https://bitcoinmagazine.com', type: 'NEWS' }],
+    dateIdentified: '2018-05-01',
+    lastUpdated: '2025-07-10',
+  },
+  {
+    id: 'vuln-16',
+    name: 'Taproot Consensus Code Complexity',
+    description: 'Taproot introduces new consensus code paths: Schnorr signature verification, Tapscript opcode semantics, witness version 1 handling, and key-path/script-path spending validation. Each is a potential source of consensus bugs.',
+    affectedComponents: [AffectedComponent.SCRIPT_ENGINE, AffectedComponent.CONSENSUS],
+    severity: 3 as const,
+    exploitability: 2 as const,
+    vulnerabilityScore: calculateVulnerabilityScore(3, 2),
+    vulnerabilityRating: getSeverityRating(calculateVulnerabilityScore(3, 2)),
+    status: VulnerabilityStatus.CONFIRMED,
+    remediationStrategies: [
+      { id: 'vrem-16-1', parentId: 'vuln-16', parentType: 'vulnerability', title: 'Continuous Tapscript Fuzzing', description: 'Ongoing fuzzing and formal verification of Taproot consensus code paths.', effectiveness: 75, estimatedCostUSD: 2_000_000, timelineMonths: 24, status: 'IN_PROGRESS', relatedBIPs: ['BIP-340', 'BIP-341', 'BIP-342'] },
+    ],
+    relatedBIPs: ['BIP-340', 'BIP-341', 'BIP-342'],
+    evidenceSources: [{ title: 'BIP-341: Taproot Specification', url: 'https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki', type: 'BIP' }],
+    dateIdentified: '2021-11-14',
+    lastUpdated: '2025-05-15',
+  },
+  {
+    id: 'vuln-17',
+    name: 'Measurable Energy Consumption Narrative Surface',
+    description: 'Bitcoin\'s proof-of-work inherently requires significant energy expenditure. Energy consumption is measurable and comparable to national electricity usage, making it emotionally compelling for FUD regardless of renewable energy nuances.',
+    affectedComponents: [AffectedComponent.MINING],
+    severity: 2 as const,
+    exploitability: 4 as const,
+    vulnerabilityScore: calculateVulnerabilityScore(2, 4),
+    vulnerabilityRating: getSeverityRating(calculateVulnerabilityScore(2, 4)),
+    status: VulnerabilityStatus.EXPLOITABLE,
+    remediationStrategies: [
+      { id: 'vrem-17-1', parentId: 'vuln-17', parentType: 'vulnerability', title: 'Energy Transparency Initiative', description: 'Publish verifiable data on renewable energy usage and methane capture benefits of Bitcoin mining.', effectiveness: 50, estimatedCostUSD: 2_000_000, timelineMonths: 12, status: 'IN_PROGRESS', relatedBIPs: [] },
+    ],
+    relatedBIPs: [],
+    evidenceSources: [{ title: 'Bitcoin Mining Council Survey', url: 'https://bitcoinminingcouncil.com', type: 'RESEARCH' }],
+    dateIdentified: '2021-05-01',
+    lastUpdated: '2025-10-01',
+  },
+  {
+    id: 'vuln-18',
+    name: 'Conservative Development Narrative Gap',
+    description: 'Bitcoin\'s conservative development approach and limited base-layer programmability create a narrative vulnerability. Competitors point to higher throughput, smart contracts, and lower energy as advantages to less technical audiences.',
+    affectedComponents: [AffectedComponent.P2P_NETWORK],
+    severity: 2 as const,
+    exploitability: 3 as const,
+    vulnerabilityScore: calculateVulnerabilityScore(2, 3),
+    vulnerabilityRating: getSeverityRating(calculateVulnerabilityScore(2, 3)),
+    status: VulnerabilityStatus.CONFIRMED,
+    remediationStrategies: [
+      { id: 'vrem-18-1', parentId: 'vuln-18', parentType: 'vulnerability', title: 'Bitcoin Education and Research', description: 'Fund and distribute Bitcoin-only education content and institutional research.', effectiveness: 35, estimatedCostUSD: 5_000_000, timelineMonths: 24, status: 'IN_PROGRESS', relatedBIPs: [] },
+    ],
+    relatedBIPs: [],
+    evidenceSources: [{ title: 'Bitcoin Dominance Analysis', url: 'https://www.coingecko.com/en/global-charts', type: 'NEWS' }],
     dateIdentified: '2015-07-30',
     lastUpdated: '2025-10-22',
   },

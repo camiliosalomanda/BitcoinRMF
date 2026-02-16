@@ -1,8 +1,11 @@
 import {
   LikelihoodLevel,
   ImpactLevel,
+  SeverityLevel,
   RiskRating,
   Threat,
+  Vulnerability,
+  DerivedRisk,
   RiskMatrixCell,
 } from '@/types';
 
@@ -100,7 +103,79 @@ export function calculateFUDValidityScore(
 }
 
 /**
- * Build 5x5 risk matrix from threats
+ * Calculate vulnerability score from severity × exploitability
+ */
+export function calculateVulnerabilityScore(
+  severity: SeverityLevel,
+  exploitability: SeverityLevel
+): number {
+  return severity * exploitability;
+}
+
+/**
+ * Derive risks from threat×vulnerability pairings
+ */
+export function deriveRisks(threats: Threat[], vulnerabilities: Vulnerability[]): DerivedRisk[] {
+  const vulnMap = new Map(vulnerabilities.map((v) => [v.id, v]));
+  const risks: DerivedRisk[] = [];
+
+  for (const threat of threats) {
+    for (const vulnId of threat.vulnerabilityIds) {
+      const vuln = vulnMap.get(vulnId);
+      if (!vuln) continue;
+      const likelihood = threat.likelihood;
+      const impact = vuln.severity;
+      const riskScore = likelihood * impact;
+      risks.push({
+        threatId: threat.id,
+        vulnerabilityId: vuln.id,
+        threatName: threat.name,
+        vulnerabilityName: vuln.name,
+        likelihood,
+        impact,
+        riskScore,
+        riskRating: getSeverityRating(riskScore),
+        threat,
+        vulnerability: vuln,
+      });
+    }
+  }
+
+  return risks.sort((a, b) => b.riskScore - a.riskScore);
+}
+
+/**
+ * Build 5x5 risk matrix from derived risks
+ */
+export function buildRiskMatrixFromRisks(risks: DerivedRisk[]): RiskMatrixCell[][] {
+  const matrix: RiskMatrixCell[][] = [];
+
+  for (let l = 5; l >= 1; l--) {
+    const row: RiskMatrixCell[] = [];
+    for (let i = 1; i <= 5; i++) {
+      const cellRisks = risks.filter(
+        (r) => r.likelihood === l && r.impact === i
+      );
+      const maxScore = cellRisks.length > 0
+        ? Math.max(...cellRisks.map((r) => r.riskScore))
+        : 0;
+      row.push({
+        likelihood: l as LikelihoodLevel,
+        impact: i as ImpactLevel,
+        threats: [],
+        risks: cellRisks,
+        count: cellRisks.length,
+        maxSeverity: getSeverityRating(maxScore),
+      });
+    }
+    matrix.push(row);
+  }
+
+  return matrix;
+}
+
+/**
+ * Build 5x5 risk matrix from threats (legacy fallback)
  */
 export function buildRiskMatrix(threats: Threat[]): RiskMatrixCell[][] {
   const matrix: RiskMatrixCell[][] = [];
@@ -118,6 +193,7 @@ export function buildRiskMatrix(threats: Threat[]): RiskMatrixCell[][] {
         likelihood: l as LikelihoodLevel,
         impact: i as ImpactLevel,
         threats: cellThreats,
+        risks: [],
         count: cellThreats.length,
         maxSeverity: getSeverityRating(maxScore),
       });

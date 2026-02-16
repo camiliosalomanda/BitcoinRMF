@@ -6,7 +6,9 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   Shield,
+  Bug,
   Grid3X3,
+  Wrench,
   FileCode,
   MessageSquareWarning,
   ChevronLeft,
@@ -30,7 +32,9 @@ interface SidebarProps {
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/threats', label: 'Threat Register', icon: Shield },
+  { href: '/vulnerabilities', label: 'Vulnerabilities', icon: Bug },
   { href: '/risk-matrix', label: 'Risk Matrix', icon: Grid3X3 },
+  { href: '/remediations', label: 'Remediations', icon: Wrench },
   { href: '/bips', label: 'BIP Evaluator', icon: FileCode },
   { href: '/fud', label: 'FUD Tracker', icon: MessageSquareWarning },
   { href: '/methodology', label: 'Methodology', icon: BookOpen },
@@ -38,6 +42,7 @@ const NAV_ITEMS = [
 
 const SUBMIT_ITEMS = [
   { href: '/threats/submit', label: 'Submit Threat' },
+  { href: '/vulnerabilities/submit', label: 'Submit Vulnerability' },
   { href: '/fud/submit', label: 'Submit FUD' },
 ];
 

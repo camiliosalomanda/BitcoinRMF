@@ -74,6 +74,7 @@ CREATE TABLE IF NOT EXISTS threats (
   status TEXT DEFAULT 'published' CHECK (status IN (
     'draft', 'published', 'archived', 'under_review'
   )),
+  vulnerability_ids TEXT[] DEFAULT '{}',
   related_bips TEXT[] DEFAULT '{}',
   evidence_sources JSONB DEFAULT '[]',
   submitted_by TEXT,
@@ -81,6 +82,49 @@ CREATE TABLE IF NOT EXISTS threats (
   date_identified TIMESTAMPTZ DEFAULT NOW(),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ===========================================
+-- Vulnerabilities
+-- ===========================================
+CREATE TABLE IF NOT EXISTS vulnerabilities (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  description TEXT NOT NULL,
+  affected_components TEXT[] DEFAULT '{}',
+  severity INTEGER NOT NULL CHECK (severity BETWEEN 1 AND 5),
+  exploitability INTEGER NOT NULL CHECK (exploitability BETWEEN 1 AND 5),
+  vulnerability_score INTEGER GENERATED ALWAYS AS (severity * exploitability) STORED,
+  vulnerability_rating TEXT GENERATED ALWAYS AS (
+    CASE
+      WHEN severity * exploitability >= 20 THEN 'CRITICAL'
+      WHEN severity * exploitability >= 12 THEN 'HIGH'
+      WHEN severity * exploitability >= 6 THEN 'MEDIUM'
+      WHEN severity * exploitability >= 3 THEN 'LOW'
+      ELSE 'VERY_LOW'
+    END
+  ) STORED,
+  vuln_status TEXT DEFAULT 'DISCOVERED' CHECK (vuln_status IN (
+    'DISCOVERED', 'CONFIRMED', 'EXPLOITABLE', 'PATCHED', 'MITIGATED'
+  )),
+  remediation_strategies JSONB DEFAULT '[]',
+  related_bips TEXT[] DEFAULT '{}',
+  evidence_sources JSONB DEFAULT '[]',
+  status TEXT DEFAULT 'published' CHECK (status IN (
+    'draft', 'published', 'archived', 'under_review'
+  )),
+  submitted_by TEXT,
+  submitted_by_name TEXT,
+  date_identified TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Threat-Vulnerability junction table
+CREATE TABLE IF NOT EXISTS threat_vulnerabilities (
+  threat_id TEXT NOT NULL REFERENCES threats(id) ON DELETE CASCADE,
+  vulnerability_id TEXT NOT NULL REFERENCES vulnerabilities(id) ON DELETE CASCADE,
+  PRIMARY KEY (threat_id, vulnerability_id)
 );
 
 -- ===========================================
@@ -140,7 +184,7 @@ CREATE TABLE IF NOT EXISTS fud_analyses (
 -- ===========================================
 CREATE TABLE IF NOT EXISTS audit_log (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  entity_type TEXT NOT NULL CHECK (entity_type IN ('threat', 'bip', 'fud')),
+  entity_type TEXT NOT NULL CHECK (entity_type IN ('threat', 'bip', 'fud', 'vulnerability')),
   entity_id TEXT NOT NULL,
   action TEXT NOT NULL CHECK (action IN ('create', 'update', 'delete', 'publish', 'archive', 'reject', 'vote_publish', 'vote_archive')),
   user_id TEXT NOT NULL,
@@ -154,7 +198,7 @@ CREATE TABLE IF NOT EXISTS audit_log (
 -- ===========================================
 CREATE TABLE IF NOT EXISTS comments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  target_type TEXT NOT NULL CHECK (target_type IN ('threat', 'bip', 'fud')),
+  target_type TEXT NOT NULL CHECK (target_type IN ('threat', 'bip', 'fud', 'vulnerability')),
   target_id TEXT NOT NULL,
   x_id TEXT NOT NULL,
   x_username TEXT NOT NULL,
@@ -173,7 +217,7 @@ CREATE TABLE IF NOT EXISTS comments (
 -- ===========================================
 CREATE TABLE IF NOT EXISTS votes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  target_type TEXT NOT NULL CHECK (target_type IN ('threat', 'fud')),
+  target_type TEXT NOT NULL CHECK (target_type IN ('threat', 'fud', 'vulnerability')),
   target_id TEXT NOT NULL,
   x_id TEXT NOT NULL,
   x_username TEXT NOT NULL,
@@ -192,6 +236,11 @@ CREATE INDEX IF NOT EXISTS idx_threats_source ON threats(threat_source);
 CREATE INDEX IF NOT EXISTS idx_threats_status ON threats(status);
 CREATE INDEX IF NOT EXISTS idx_threats_rmf_status ON threats(rmf_status);
 CREATE INDEX IF NOT EXISTS idx_threats_severity ON threats(severity_score DESC);
+CREATE INDEX IF NOT EXISTS idx_vulnerabilities_severity ON vulnerabilities(vulnerability_score DESC);
+CREATE INDEX IF NOT EXISTS idx_vulnerabilities_status ON vulnerabilities(status);
+CREATE INDEX IF NOT EXISTS idx_vulnerabilities_vuln_status ON vulnerabilities(vuln_status);
+CREATE INDEX IF NOT EXISTS idx_threat_vulns_threat ON threat_vulnerabilities(threat_id);
+CREATE INDEX IF NOT EXISTS idx_threat_vulns_vuln ON threat_vulnerabilities(vulnerability_id);
 CREATE INDEX IF NOT EXISTS idx_bip_number ON bip_evaluations(bip_number);
 CREATE INDEX IF NOT EXISTS idx_bip_status ON bip_evaluations(status);
 CREATE INDEX IF NOT EXISTS idx_fud_category ON fud_analyses(category);
@@ -210,6 +259,8 @@ CREATE INDEX IF NOT EXISTS idx_votes_user ON votes(x_id);
 ALTER TABLE threats ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bip_evaluations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE fud_analyses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE vulnerabilities ENABLE ROW LEVEL SECURITY;
+ALTER TABLE threat_vulnerabilities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
@@ -224,6 +275,12 @@ CREATE POLICY "Public read published BIPs" ON bip_evaluations
 
 CREATE POLICY "Public read published FUD" ON fud_analyses
   FOR SELECT USING (status = 'published');
+
+CREATE POLICY "Public read published vulnerabilities" ON vulnerabilities
+  FOR SELECT USING (status = 'published');
+
+CREATE POLICY "Public read threat_vulnerabilities" ON threat_vulnerabilities
+  FOR SELECT USING (true);
 
 -- Service role has full access (used by API routes via createAdminClient)
 -- No explicit policy needed; service_role bypasses RLS
@@ -262,6 +319,9 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER threats_updated_at BEFORE UPDATE ON threats
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER vulnerabilities_updated_at BEFORE UPDATE ON vulnerabilities
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
 CREATE TRIGGER bip_evaluations_updated_at BEFORE UPDATE ON bip_evaluations

@@ -1,5 +1,6 @@
 import type {
   Threat,
+  Vulnerability,
   BIPEvaluation,
   FUDAnalysis,
   FAIREstimates,
@@ -7,11 +8,14 @@ import type {
   EvidenceSource,
   LikelihoodLevel,
   ImpactLevel,
+  SeverityLevel,
+  ExploitabilityLevel,
   STRIDECategory,
   ThreatSource,
   AffectedComponent,
   RiskRating,
   ThreatStatus,
+  VulnerabilityStatus,
   NistRmfStage,
   BIPRecommendation,
   FUDCategory,
@@ -49,9 +53,30 @@ export interface ThreatRow {
   nist_stage: string;
   rmf_status: string;
   status: string;
+  vulnerability_ids?: string[];
   related_bips: string[];
   evidence_sources: unknown;
   remediation_strategies?: unknown;
+  submitted_by?: string | null;
+  date_identified: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface VulnerabilityRow {
+  id: string;
+  name: string;
+  description: string;
+  affected_components: string[];
+  severity: number;
+  exploitability: number;
+  vulnerability_score: number;
+  vulnerability_rating: string;
+  vuln_status: string;
+  remediation_strategies?: unknown;
+  related_bips: string[];
+  evidence_sources: unknown;
+  status: string;
   submitted_by?: string | null;
   date_identified: string;
   created_at: string;
@@ -98,11 +123,12 @@ export interface FUDRow {
   updated_at: string;
 }
 
-function parseRemediationStrategies(raw: unknown, threatId: string): RemediationStrategy[] {
+function parseRemediationStrategies(raw: unknown, parentId: string, parentType: 'threat' | 'vulnerability' = 'threat'): RemediationStrategy[] {
   if (!raw || !Array.isArray(raw)) return [];
   return (raw as Record<string, unknown>[]).map((r) => ({
     id: (r.id as string) || '',
-    threatId,
+    parentId: (r.parentId as string) || (r.threatId as string) || parentId,
+    parentType: (r.parentType as 'threat' | 'vulnerability') || parentType,
     title: (r.title as string) || '',
     description: (r.description as string) || '',
     effectiveness: (r.effectiveness as number) || 0,
@@ -154,12 +180,55 @@ export function threatFromRow(row: ThreatRow): Threat {
     nistStage: (row.nist_stage || 'PREPARE') as NistRmfStage,
     status: (row.rmf_status || 'IDENTIFIED') as ThreatStatus,
     workflowStatus: row.status || 'published',
-    remediationStrategies: parseRemediationStrategies(row.remediation_strategies, row.id),
+    vulnerabilityIds: row.vulnerability_ids || [],
+    remediationStrategies: parseRemediationStrategies(row.remediation_strategies, row.id, 'threat'),
     relatedBIPs: row.related_bips || [],
     evidenceSources: parseEvidenceSources(row.evidence_sources),
     dateIdentified: row.date_identified || row.created_at,
     lastUpdated: row.updated_at,
     submittedBy: row.submitted_by || undefined,
+  };
+}
+
+export function vulnerabilityFromRow(row: VulnerabilityRow): Vulnerability {
+  const severity = row.severity as SeverityLevel;
+  const exploitability = row.exploitability as ExploitabilityLevel;
+  const score = row.vulnerability_score ?? severity * exploitability;
+
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    affectedComponents: (row.affected_components || []) as AffectedComponent[],
+    severity,
+    exploitability,
+    vulnerabilityScore: score,
+    vulnerabilityRating: (row.vulnerability_rating || getSeverityRating(score)) as RiskRating,
+    status: (row.vuln_status || 'DISCOVERED') as VulnerabilityStatus,
+    remediationStrategies: parseRemediationStrategies(row.remediation_strategies, row.id, 'vulnerability'),
+    relatedBIPs: row.related_bips || [],
+    evidenceSources: parseEvidenceSources(row.evidence_sources),
+    dateIdentified: row.date_identified || row.created_at,
+    lastUpdated: row.updated_at,
+    submittedBy: row.submitted_by || undefined,
+    workflowStatus: row.status || 'published',
+  };
+}
+
+export function vulnerabilityToRow(vuln: Vulnerability): Record<string, unknown> {
+  return {
+    id: vuln.id,
+    name: vuln.name,
+    description: vuln.description,
+    affected_components: vuln.affectedComponents,
+    severity: vuln.severity,
+    exploitability: vuln.exploitability,
+    vuln_status: vuln.status,
+    remediation_strategies: vuln.remediationStrategies,
+    related_bips: vuln.relatedBIPs,
+    evidence_sources: vuln.evidenceSources,
+    status: vuln.workflowStatus || 'published',
+    date_identified: vuln.dateIdentified,
   };
 }
 
@@ -233,6 +302,7 @@ export function threatToRow(threat: Threat): Record<string, unknown> {
     nist_stage: threat.nistStage,
     rmf_status: threat.status,
     status: threat.workflowStatus || 'published',
+    vulnerability_ids: threat.vulnerabilityIds,
     remediation_strategies: threat.remediationStrategies,
     related_bips: threat.relatedBIPs,
     evidence_sources: threat.evidenceSources,

@@ -1,17 +1,17 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useThreats } from './useThreats';
-import { buildRiskMatrix } from '@/lib/scoring';
+import { useRisks } from './useRisks';
+import { buildRiskMatrixFromRisks } from '@/lib/scoring';
 import type { RiskMatrixCell } from '@/types';
 
 export function useRiskMatrix() {
-  const { data: threats, isLoading, error } = useThreats();
+  const { data: risks, isLoading, error } = useRisks();
 
   const matrix = useMemo<RiskMatrixCell[][] | undefined>(() => {
-    if (!threats) return undefined;
-    return buildRiskMatrix(threats);
-  }, [threats]);
+    if (!risks) return undefined;
+    return buildRiskMatrixFromRisks(risks);
+  }, [risks]);
 
   return { data: matrix, isLoading, error };
 }

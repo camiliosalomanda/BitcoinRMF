@@ -87,6 +87,33 @@ export type FUDStatus = 'ACTIVE' | 'DEBUNKED' | 'PARTIALLY_VALID';
 
 export type RemediationStatus = 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'DEFERRED';
 
+export enum VulnerabilityStatus {
+  DISCOVERED = 'DISCOVERED',
+  CONFIRMED = 'CONFIRMED',
+  EXPLOITABLE = 'EXPLOITABLE',
+  PATCHED = 'PATCHED',
+  MITIGATED = 'MITIGATED',
+}
+
+export type SeverityLevel = 1 | 2 | 3 | 4 | 5;
+export type ExploitabilityLevel = 1 | 2 | 3 | 4 | 5;
+
+export const SEVERITY_LABELS: Record<SeverityLevel, string> = {
+  1: 'Negligible',
+  2: 'Minor',
+  3: 'Moderate',
+  4: 'Major',
+  5: 'Critical',
+};
+
+export const EXPLOITABILITY_LABELS: Record<ExploitabilityLevel, string> = {
+  1: 'Theoretical',
+  2: 'Difficult',
+  3: 'Moderate',
+  4: 'Easy',
+  5: 'Trivial',
+};
+
 // --- Likelihood & Impact Labels ---
 
 export const LIKELIHOOD_LABELS: Record<LikelihoodLevel, string> = {
@@ -124,7 +151,8 @@ export interface EvidenceSource {
 
 export interface RemediationStrategy {
   id: string;
-  threatId: string;
+  parentId: string;
+  parentType: 'threat' | 'vulnerability';
   title: string;
   description: string;
   effectiveness: number; // 0-100
@@ -154,6 +182,7 @@ export interface Threat {
   nistStage: NistRmfStage;
   status: ThreatStatus;
   workflowStatus?: string;
+  vulnerabilityIds: string[];
   remediationStrategies: RemediationStrategy[];
   relatedBIPs: string[];
   evidenceSources: EvidenceSource[];
@@ -200,6 +229,42 @@ export interface FUDAnalysis {
   submittedBy?: string;
 }
 
+// --- Vulnerability ---
+
+export interface Vulnerability {
+  id: string;
+  name: string;
+  description: string;
+  affectedComponents: AffectedComponent[];
+  severity: SeverityLevel;
+  exploitability: ExploitabilityLevel;
+  vulnerabilityScore: number; // severity × exploitability (1-25)
+  vulnerabilityRating: RiskRating;
+  status: VulnerabilityStatus;
+  remediationStrategies: RemediationStrategy[];
+  relatedBIPs: string[];
+  evidenceSources: EvidenceSource[];
+  dateIdentified: string;
+  lastUpdated: string;
+  submittedBy?: string;
+  workflowStatus?: string;
+}
+
+// --- Derived Risk ---
+
+export interface DerivedRisk {
+  threatId: string;
+  vulnerabilityId: string;
+  threatName: string;
+  vulnerabilityName: string;
+  likelihood: LikelihoodLevel;  // from threat
+  impact: SeverityLevel;        // from vulnerability severity
+  riskScore: number;            // likelihood × impact (1-25)
+  riskRating: RiskRating;
+  threat: Threat;
+  vulnerability: Vulnerability;
+}
+
 // --- Votes ---
 
 export type VoteTargetType = 'threat' | 'fud';
@@ -216,6 +281,7 @@ export interface RiskMatrixCell {
   likelihood: LikelihoodLevel;
   impact: ImpactLevel;
   threats: Threat[];
+  risks: DerivedRisk[];
   count: number;
   maxSeverity: RiskRating;
 }
@@ -229,11 +295,15 @@ export interface DashboardStats {
   activeFUD: number;
   mitigatedThreats: number;
   monitoringThreats: number;
+  totalVulnerabilities: number;
+  totalRisks: number;
+  criticalHighRiskCount: number;
+  patchedVulnerabilities: number;
 }
 
 // --- Comments & Feedback ---
 
-export type CommentTargetType = 'threat' | 'bip' | 'fud';
+export type CommentTargetType = 'threat' | 'bip' | 'fud' | 'vulnerability';
 
 export interface CommentAuthor {
   xId: string;

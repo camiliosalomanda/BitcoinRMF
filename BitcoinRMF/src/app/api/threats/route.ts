@@ -92,6 +92,7 @@ export async function POST(request: NextRequest) {
     },
     nistStage: parsed.data.nistStage || 'PREPARE',
     status: 'IDENTIFIED',
+    vulnerabilityIds: parsed.data.vulnerabilityIds || [],
     remediationStrategies: parsed.data.remediationStrategies || [],
     relatedBIPs: parsed.data.relatedBIPs || [],
     evidenceSources: parsed.data.evidenceSources || [],

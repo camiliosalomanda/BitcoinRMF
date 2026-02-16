@@ -54,11 +54,16 @@ export const evidenceSourceSchema = z.object({
   type: z.enum(['RESEARCH', 'CVE', 'INCIDENT', 'NEWS', 'BIP', 'WHITEPAPER', 'X_POST']),
 });
 
+export const vulnerabilityStatus = z.enum([
+  'DISCOVERED', 'CONFIRMED', 'EXPLOITABLE', 'PATCHED', 'MITIGATED',
+]);
+
 // --- Remediation Strategy ---
 
 export const remediationStrategySchema = z.object({
   id: z.string(),
-  threatId: z.string(),
+  parentId: z.string(),
+  parentType: z.enum(['threat', 'vulnerability']).default('threat'),
   title: z.string().transform(sanitizeInput),
   description: z.string().transform(sanitizeInput),
   effectiveness: z.number().min(0).max(100),
@@ -97,12 +102,29 @@ export const threatInputSchema = z.object({
   fairEstimates: fairEstimatesSchema.optional(),
   nistStage: nistRmfStage.optional(),
   status: threatStatus.optional(),
+  vulnerabilityIds: z.array(z.string()).optional(),
   remediationStrategies: z.array(remediationStrategySchema).optional(),
   relatedBIPs: z.array(z.string()).optional(),
   evidenceSources: z.array(evidenceSourceSchema).optional(),
 });
 
 export type ThreatInput = z.infer<typeof threatInputSchema>;
+
+// --- Vulnerability Input ---
+
+export const vulnerabilityInputSchema = z.object({
+  name: z.string().min(1).max(500).transform(sanitizeInput),
+  description: z.string().min(1).max(10000).transform(sanitizeInput),
+  affectedComponents: z.array(affectedComponent),
+  severity: z.number().int().min(1).max(5),
+  exploitability: z.number().int().min(1).max(5),
+  status: vulnerabilityStatus.optional(),
+  remediationStrategies: z.array(remediationStrategySchema).optional(),
+  relatedBIPs: z.array(z.string()).optional(),
+  evidenceSources: z.array(evidenceSourceSchema).optional(),
+});
+
+export type VulnerabilityInput = z.infer<typeof vulnerabilityInputSchema>;
 
 // --- BIP Input ---
 
@@ -153,7 +175,7 @@ export type VoteInput = z.infer<typeof voteInputSchema>;
 
 export const auditLogSchema = z.object({
   id: z.string(),
-  entityType: z.enum(['threat', 'bip', 'fud']),
+  entityType: z.enum(['threat', 'bip', 'fud', 'vulnerability']),
   entityId: z.string(),
   action: z.enum(['create', 'update', 'delete', 'publish', 'archive', 'reject']),
   userId: z.string(),

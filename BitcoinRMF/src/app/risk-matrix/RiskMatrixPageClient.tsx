@@ -15,7 +15,7 @@ export default function RiskMatrixPageClient() {
           <div>
             <h1 className="text-2xl font-bold text-white">Risk Matrix</h1>
             <p className="text-gray-500 text-sm mt-1">
-              5&times;5 heatmap of Bitcoin threat landscape — Likelihood vs Impact
+              5&times;5 heatmap — Threat Likelihood vs Vulnerability Severity
             </p>
           </div>
           <ShareToXButton

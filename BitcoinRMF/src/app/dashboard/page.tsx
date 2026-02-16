@@ -9,6 +9,7 @@ import { useFUD } from '@/hooks/useFUD';
 import { useBIPs } from '@/hooks/useBIPs';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useRiskMatrix } from '@/hooks/useRiskMatrix';
+import { useRisks } from '@/hooks/useRisks';
 import { getMatrixCellColor } from '@/lib/scoring';
 import { useBitcoinMetrics } from '@/hooks/useMetrics';
 import { useSocialEvidence } from '@/hooks/useSocialEvidence';
@@ -17,6 +18,7 @@ import {
   AlertTriangle,
   Activity,
   Wrench,
+  Bug,
   Bitcoin,
   Cpu,
   BarChart3,
@@ -31,12 +33,14 @@ export default function DashboardPage() {
   const { data: bips = [] } = useBIPs();
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: matrix } = useRiskMatrix();
+  const { data: risks = [] } = useRisks();
   const { data: metrics } = useBitcoinMetrics();
   const socialEvidence = useSocialEvidence();
 
   const topThreats = [...threats]
     .sort((a, b) => b.severityScore - a.severityScore)
     .slice(0, 5);
+  const topRisks = risks.slice(0, 5);
   const recentFUD = fudAnalyses.filter((f) => f.status !== 'DEBUNKED').slice(0, 3);
 
   return (
@@ -97,19 +101,31 @@ export default function DashboardPage() {
         {statsLoading || !stats ? (
           <StatsSkeleton />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
             <StatCard
-              label="Total Threats"
+              label="Total Risks"
+              value={stats.totalRisks}
+              icon={AlertTriangle}
+              color="#ef4444"
+            />
+            <StatCard
+              label="Critical/High Risks"
+              value={stats.criticalHighRiskCount}
+              icon={AlertTriangle}
+              color="#f97316"
+              trend={stats.criticalHighRiskCount > 0 ? { direction: 'neutral', label: 'Active monitoring' } : undefined}
+            />
+            <StatCard
+              label="Vulnerabilities"
+              value={stats.totalVulnerabilities}
+              icon={Bug}
+              color="#eab308"
+            />
+            <StatCard
+              label="Threats"
               value={stats.totalThreats}
               icon={Shield}
               color="#f7931a"
-            />
-            <StatCard
-              label="Critical / High"
-              value={stats.criticalHighCount}
-              icon={AlertTriangle}
-              color="#ef4444"
-              trend={stats.criticalHighCount > 0 ? { direction: 'neutral', label: 'Active monitoring' } : undefined}
             />
             <StatCard
               label="Avg Severity"
@@ -118,7 +134,7 @@ export default function DashboardPage() {
               color="#eab308"
             />
             <StatCard
-              label="Active Remediations"
+              label="Remediations"
               value={stats.activeRemediations}
               icon={Wrench}
               color="#22c55e"
@@ -182,16 +198,32 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Top Threats */}
+          {/* Top Risks */}
           <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-white">Top Threats by Severity</h2>
-              <Link href="/threats" className="text-xs text-[#f7931a] hover:underline">
-                View all
+              <h2 className="text-sm font-semibold text-white">Top Risks</h2>
+              <Link href="/risk-matrix" className="text-xs text-[#f7931a] hover:underline">
+                View matrix
               </Link>
             </div>
             <div className="space-y-3">
-              {topThreats.map((threat, idx) => (
+              {topRisks.length > 0 ? topRisks.map((risk, idx) => (
+                <div
+                  key={`${risk.threatId}-${risk.vulnerabilityId}`}
+                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors"
+                >
+                  <span className="text-xs text-gray-600 w-4">{idx + 1}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-200 truncate">
+                      <Link href={`/threats/${risk.threatId}`} className="hover:text-[#f7931a]">{risk.threatName}</Link>
+                      <span className="text-gray-600 mx-1">&rarr;</span>
+                      <Link href={`/vulnerabilities/${risk.vulnerabilityId}`} className="text-amber-400 hover:text-[#f7931a]">{risk.vulnerabilityName}</Link>
+                    </p>
+                    <p className="text-[10px] text-gray-500">Score: {risk.riskScore}/25</p>
+                  </div>
+                  <SeverityBadge rating={risk.riskRating} size="sm" />
+                </div>
+              )) : topThreats.map((threat, idx) => (
                 <Link
                   key={threat.id}
                   href={`/threats/${threat.id}`}

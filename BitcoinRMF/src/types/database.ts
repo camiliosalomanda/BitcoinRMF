@@ -59,6 +59,7 @@ export interface Database {
           nist_stage: string;
           rmf_status: string;
           status: string;
+          vulnerability_ids: string[];
           related_bips: string[];
           evidence_sources: unknown;
           submitted_by: string | null;
@@ -91,6 +92,7 @@ export interface Database {
           nist_stage?: string;
           rmf_status?: string;
           status?: string;
+          vulnerability_ids?: string[];
           related_bips?: string[];
           evidence_sources?: unknown;
           submitted_by?: string | null;
@@ -120,6 +122,7 @@ export interface Database {
           nist_stage?: string;
           rmf_status?: string;
           status?: string;
+          vulnerability_ids?: string[];
           related_bips?: string[];
           evidence_sources?: unknown;
           submitted_by?: string | null;
@@ -243,6 +246,76 @@ export interface Database {
           price_impact_estimate?: string | null;
           submitted_by?: string | null;
           submitted_by_name?: string | null;
+        };
+        Relationships: [];
+      };
+      vulnerabilities: {
+        Row: {
+          id: string;
+          name: string;
+          description: string;
+          affected_components: string[];
+          severity: number;
+          exploitability: number;
+          vulnerability_score: number;
+          vulnerability_rating: string;
+          vuln_status: string;
+          remediation_strategies: unknown;
+          related_bips: string[];
+          evidence_sources: unknown;
+          status: string;
+          submitted_by: string | null;
+          submitted_by_name: string | null;
+          date_identified: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          name: string;
+          description: string;
+          affected_components?: string[];
+          severity: number;
+          exploitability: number;
+          vuln_status?: string;
+          remediation_strategies?: unknown;
+          related_bips?: string[];
+          evidence_sources?: unknown;
+          status?: string;
+          submitted_by?: string | null;
+          submitted_by_name?: string | null;
+          date_identified?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          description?: string;
+          affected_components?: string[];
+          severity?: number;
+          exploitability?: number;
+          vuln_status?: string;
+          remediation_strategies?: unknown;
+          related_bips?: string[];
+          evidence_sources?: unknown;
+          status?: string;
+          submitted_by?: string | null;
+          submitted_by_name?: string | null;
+        };
+        Relationships: [];
+      };
+      threat_vulnerabilities: {
+        Row: {
+          threat_id: string;
+          vulnerability_id: string;
+          created_at: string;
+        };
+        Insert: {
+          threat_id: string;
+          vulnerability_id: string;
+        };
+        Update: {
+          threat_id?: string;
+          vulnerability_id?: string;
         };
         Relationships: [];
       };
