@@ -1,12 +1,18 @@
 'use client';
 
+import { useState, useEffect, useCallback } from 'react';
 import { useSession, signIn } from 'next-auth/react';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, X as XIcon } from 'lucide-react';
 import { CommentTargetType, Comment } from '@/types';
 import { useUIStore } from '@/lib/store';
 import CommentCard from './CommentCard';
 import CommentForm from './CommentForm';
 import { v4 as uuidv4 } from 'uuid';
+
+interface SharePrompt {
+  content: string;
+  url: string;
+}
 
 interface CommentSectionProps {
   targetType: CommentTargetType;
@@ -16,6 +22,15 @@ interface CommentSectionProps {
 export default function CommentSection({ targetType, targetId }: CommentSectionProps) {
   const { data: session } = useSession();
   const { addComment, getCommentsByTarget } = useUIStore();
+  const [sharePrompt, setSharePrompt] = useState<SharePrompt | null>(null);
+
+  const dismissShare = useCallback(() => setSharePrompt(null), []);
+
+  useEffect(() => {
+    if (!sharePrompt) return;
+    const timer = setTimeout(dismissShare, 8000);
+    return () => clearTimeout(timer);
+  }, [sharePrompt, dismissShare]);
 
   const allComments = getCommentsByTarget(targetType, targetId);
   const topLevelComments = allComments
@@ -42,6 +57,16 @@ export default function CommentSection({ targetType, targetId }: CommentSectionP
       likedBy: [],
     };
     addComment(comment);
+    setSharePrompt({ content, url: window.location.href });
+  }
+
+  function buildXIntentUrl(prompt: SharePrompt): string {
+    const params = new URLSearchParams({
+      text: prompt.content,
+      url: prompt.url,
+      hashtags: 'Bitcoin,BitcoinRMF',
+    });
+    return `https://x.com/intent/tweet?${params.toString()}`;
   }
 
   return (
@@ -66,6 +91,31 @@ export default function CommentSection({ targetType, targetId }: CommentSectionP
         >
           Sign in with X to join the discussion
         </button>
+      )}
+
+      {/* Share to X prompt */}
+      {sharePrompt && (
+        <div className="mb-4 flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg border border-[#1d9bf0]/30 bg-[#1d9bf0]/10 animate-in fade-in slide-in-from-top-2 duration-300">
+          <a
+            href={buildXIntentUrl(sharePrompt)}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={dismissShare}
+            className="flex items-center gap-2 text-sm text-[#1d9bf0] hover:text-[#1d9bf0]/80 transition-colors"
+          >
+            <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current" aria-hidden="true">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+            </svg>
+            Share your take on X
+          </a>
+          <button
+            onClick={dismissShare}
+            className="text-gray-500 hover:text-white transition-colors"
+            aria-label="Dismiss"
+          >
+            <XIcon size={14} />
+          </button>
+        </div>
       )}
 
       {/* Comments list */}
