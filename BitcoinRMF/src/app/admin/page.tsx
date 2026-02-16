@@ -4,12 +4,14 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useReviewQueue, useAuditLog } from '@/hooks/useAdmin';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { useSyncBIPs } from '@/hooks/useBIPs';
 import Link from 'next/link';
 import {
   Shield,
   ClipboardList,
   ScrollText,
   AlertTriangle,
+  GitBranch,
 } from 'lucide-react';
 
 export default function AdminPage() {
@@ -38,6 +40,8 @@ export default function AdminPage() {
       </DashboardLayout>
     );
   }
+
+  const syncBIPs = useSyncBIPs();
 
   const pendingThreats = pending.filter((p) => p.type === 'threat').length;
   const pendingFUD = pending.filter((p) => p.type === 'fud').length;
@@ -89,6 +93,58 @@ export default function AdminPage() {
             <p className="text-3xl font-bold text-white">{auditLog.length}+</p>
             <p className="mt-2 text-[10px] text-gray-500">Recent actions logged</p>
           </Link>
+        </div>
+
+        {/* GitHub BIP Sync */}
+        <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <GitBranch size={18} className="text-[#f7931a]" />
+              <div>
+                <h2 className="text-sm font-semibold text-white">GitHub BIP Sync</h2>
+                <p className="text-[10px] text-gray-500">
+                  Pull all BIP metadata from bitcoin/bips repository
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => syncBIPs.mutate()}
+              disabled={syncBIPs.isPending}
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-[#f7931a]/10 text-[#f7931a] border border-[#f7931a]/20 rounded-lg hover:bg-[#f7931a]/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {syncBIPs.isPending ? (
+                <>
+                  <span className="inline-block w-3 h-3 border border-[#f7931a] border-t-transparent rounded-full animate-spin" />
+                  Syncing...
+                </>
+              ) : (
+                <>
+                  <GitBranch size={12} />
+                  Sync from GitHub
+                </>
+              )}
+            </button>
+          </div>
+          {syncBIPs.isSuccess && syncBIPs.data && (
+            <div className="p-3 rounded-lg bg-green-400/5 border border-green-400/20 text-xs">
+              <p className="text-green-400 font-medium mb-1">Sync complete</p>
+              <div className="flex gap-4 text-gray-400">
+                <span>Total: {syncBIPs.data.total}</span>
+                <span>Inserted: {syncBIPs.data.inserted}</span>
+                <span>Updated: {syncBIPs.data.updated}</span>
+              </div>
+              {syncBIPs.data.errors.length > 0 && (
+                <p className="text-red-400 mt-1">
+                  {syncBIPs.data.errors.length} errors
+                </p>
+              )}
+            </div>
+          )}
+          {syncBIPs.isError && (
+            <div className="p-3 rounded-lg bg-red-400/5 border border-red-400/20 text-xs text-red-400">
+              Sync failed: {syncBIPs.error instanceof Error ? syncBIPs.error.message : 'Unknown error'}
+            </div>
+          )}
         </div>
 
         {/* Recent Audit Entries */}

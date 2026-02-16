@@ -177,6 +177,10 @@ export interface BIPEvaluation {
   adoptionPercentage: number; // 0-100
   status: 'DRAFT' | 'PROPOSED' | 'ACTIVE' | 'FINAL' | 'WITHDRAWN' | 'REPLACED';
   lastUpdated: string;
+  aiEvaluated?: boolean;
+  bipAuthor?: string;
+  bipType?: string;
+  bipLayer?: string;
 }
 
 export interface FUDAnalysis {

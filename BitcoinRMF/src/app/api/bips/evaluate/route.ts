@@ -7,36 +7,7 @@ import {
   addSecurityHeaders,
   sanitizeInput,
 } from '@/lib/security';
-
-const SYSTEM_PROMPT = `You are an expert Bitcoin protocol analyst specializing in BIP (Bitcoin Improvement Proposal) evaluation against the current threat landscape.
-
-When evaluating a BIP, you MUST return a JSON object with this exact structure:
-
-{
-  "bipNumber": "BIP-XXX",
-  "title": "BIP title",
-  "summary": "2-3 sentence summary of what this BIP does",
-  "recommendation": "ESSENTIAL|RECOMMENDED|OPTIONAL|UNNECESSARY|HARMFUL",
-  "necessityScore": 0-100,
-  "threatsAddressed": ["Description of threat 1 it mitigates", "Description of threat 2"],
-  "mitigationEffectiveness": 0-100,
-  "communityConsensus": 0-100,
-  "implementationReadiness": 0-100,
-  "economicImpact": "Description of economic implications",
-  "adoptionPercentage": 0-100,
-  "securityAnalysis": "How this BIP affects Bitcoin's security posture",
-  "tradeoffs": ["Tradeoff 1", "Tradeoff 2"],
-  "relatedBIPs": ["BIP-XXX"]
-}
-
-Recommendation criteria:
-- ESSENTIAL: Addresses critical/high severity threats with no alternative
-- RECOMMENDED: Addresses meaningful threats, strong community support
-- OPTIONAL: Nice to have, addresses lower-severity threats
-- UNNECESSARY: No meaningful security benefit
-- HARMFUL: Introduces new attack vectors or weakens security
-
-Be technically precise. Consider real-world adoption challenges, consensus requirements, and economic incentive compatibility. Return ONLY valid JSON, no markdown.`;
+import { BIP_EVALUATE_SYSTEM_PROMPT } from '@/lib/github-bips';
 
 export async function POST(request: NextRequest) {
   const clientId = getClientId(request);
@@ -76,7 +47,7 @@ export async function POST(request: NextRequest) {
     const response = await client.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 4096,
-      system: SYSTEM_PROMPT,
+      system: BIP_EVALUATE_SYSTEM_PROMPT,
       messages: [{ role: 'user', content: prompt }],
     });
 

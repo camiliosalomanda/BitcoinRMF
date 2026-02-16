@@ -20,6 +20,7 @@ const RECOMMENDATION_COLORS: Record<BIPRecommendation, string> = {
 
 export default function BIPCard({ bip }: BIPCardProps) {
   const commentCount = useUIStore((s) => s.getCommentCount('bip', bip.id));
+  const evaluated = bip.aiEvaluated;
 
   return (
     <Link
@@ -30,20 +31,48 @@ export default function BIPCard({ bip }: BIPCardProps) {
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-mono text-[#f7931a]">{bip.bipNumber}</span>
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium border ${RECOMMENDATION_COLORS[bip.recommendation]}`}>
-              {bip.recommendation}
-            </span>
+            {evaluated ? (
+              <>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium border ${RECOMMENDATION_COLORS[bip.recommendation]}`}>
+                  {bip.recommendation}
+                </span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium border text-purple-400 bg-purple-400/10 border-purple-400/30">
+                  AI Evaluated
+                </span>
+              </>
+            ) : (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium border text-gray-400 bg-gray-400/10 border-gray-400/30">
+                Metadata Only
+              </span>
+            )}
           </div>
           <h3 className="text-sm font-semibold text-white">{bip.title}</h3>
-          <p className="text-xs text-gray-500 mt-1 line-clamp-2">{bip.summary}</p>
+          {evaluated ? (
+            <p className="text-xs text-gray-500 mt-1 line-clamp-2">{bip.summary}</p>
+          ) : (
+            bip.bipAuthor && (
+              <p className="text-xs text-gray-500 mt-1">by {bip.bipAuthor}</p>
+            )
+          )}
         </div>
-        <ScoreGauge score={bip.necessityScore} label="Necessity" size="sm" />
+        {evaluated && (
+          <ScoreGauge score={bip.necessityScore} label="Necessity" size="sm" />
+        )}
       </div>
 
       <div className="flex items-center gap-4 mt-4 text-[10px] text-gray-500">
-        <span>Threats: {bip.threatsAddressed.length}</span>
-        <span>Adoption: {bip.adoptionPercentage}%</span>
-        <span>Consensus: {bip.communityConsensus}%</span>
+        {evaluated ? (
+          <>
+            <span>Threats: {bip.threatsAddressed.length}</span>
+            <span>Adoption: {bip.adoptionPercentage}%</span>
+            <span>Consensus: {bip.communityConsensus}%</span>
+          </>
+        ) : (
+          <>
+            {bip.bipType && <span>Type: {bip.bipType}</span>}
+            {bip.bipLayer && <span>Layer: {bip.bipLayer}</span>}
+          </>
+        )}
         {commentCount > 0 && (
           <span className="flex items-center gap-0.5">
             <MessageSquare size={10} />

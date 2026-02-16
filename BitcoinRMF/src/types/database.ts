@@ -145,6 +145,9 @@ export interface Database {
           status: string;
           submitted_by: string | null;
           submitted_by_name: string | null;
+          bip_author: string | null;
+          bip_type: string | null;
+          bip_layer: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -165,6 +168,9 @@ export interface Database {
           status?: string;
           submitted_by?: string | null;
           submitted_by_name?: string | null;
+          bip_author?: string | null;
+          bip_type?: string | null;
+          bip_layer?: string | null;
         };
         Update: {
           id?: string;
@@ -183,6 +189,9 @@ export interface Database {
           status?: string;
           submitted_by?: string | null;
           submitted_by_name?: string | null;
+          bip_author?: string | null;
+          bip_type?: string | null;
+          bip_layer?: string | null;
         };
         Relationships: [];
       };

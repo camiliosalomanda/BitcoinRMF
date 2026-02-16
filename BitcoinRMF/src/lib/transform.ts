@@ -71,7 +71,11 @@ export interface BIPRow {
   implementation_readiness: number | null;
   economic_impact: string | null;
   adoption_percentage: number | null;
+  bip_status: string | null;
   status: string;
+  bip_author: string | null;
+  bip_type: string | null;
+  bip_layer: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -173,8 +177,12 @@ export function bipFromRow(row: BIPRow): BIPEvaluation {
     implementationReadiness: row.implementation_readiness ?? 0,
     economicImpact: row.economic_impact || '',
     adoptionPercentage: row.adoption_percentage ?? 0,
-    status: (row.status || 'PROPOSED') as BIPEvaluation['status'],
+    status: (row.bip_status || row.status || 'PROPOSED') as BIPEvaluation['status'],
     lastUpdated: row.updated_at,
+    aiEvaluated: !!(row.summary),
+    bipAuthor: row.bip_author || undefined,
+    bipType: row.bip_type || undefined,
+    bipLayer: row.bip_layer || undefined,
   };
 }
 

@@ -50,3 +50,43 @@ export function useUpdateBIP() {
     },
   });
 }
+
+interface SyncResult {
+  total: number;
+  inserted: number;
+  updated: number;
+  errors: string[];
+}
+
+export function useSyncBIPs() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      apiClient<SyncResult>('/api/admin/sync-bips', { method: 'POST' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bips'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+    },
+  });
+}
+
+interface EvaluateResult {
+  evaluation: Record<string, unknown>;
+  bipId: string;
+}
+
+export function useEvaluateBIP() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (bipId: string) =>
+      apiClient<EvaluateResult>('/api/admin/evaluate-bip', {
+        method: 'POST',
+        body: JSON.stringify({ bipId }),
+      }),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['bips'] });
+      queryClient.invalidateQueries({ queryKey: ['bips', data.bipId] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+    },
+  });
+}
