@@ -18,6 +18,42 @@ const cache = new Map<string, CachedResult>();
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const MAX_CACHE_ENTRIES = 200;
 
+// Cached bearer token (long-lived, re-fetched only on failure)
+let cachedBearerToken: string | null = null;
+
+async function getBearerToken(): Promise<string | null> {
+  if (cachedBearerToken) return cachedBearerToken;
+
+  const consumerKey = process.env.AUTH_TWITTER_ID;
+  const consumerSecret = process.env.AUTH_TWITTER_SECRET;
+  if (!consumerKey || !consumerSecret) return null;
+
+  try {
+    const credentials = Buffer.from(`${encodeURIComponent(consumerKey)}:${encodeURIComponent(consumerSecret)}`).toString('base64');
+
+    const res = await fetch('https://api.x.com/oauth2/token', {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${credentials}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: 'grant_type=client_credentials',
+      signal: AbortSignal.timeout(5000),
+    });
+
+    if (!res.ok) return null;
+
+    const json = await res.json();
+    if (json.token_type === 'bearer' && json.access_token) {
+      cachedBearerToken = json.access_token;
+      return cachedBearerToken;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 function getCached(query: string): XUser[] | null {
   const entry = cache.get(query.toLowerCase());
   if (!entry) return null;
@@ -29,7 +65,6 @@ function getCached(query: string): XUser[] | null {
 }
 
 function setCache(query: string, data: XUser[]) {
-  // Evict oldest entries if cache is full
   if (cache.size >= MAX_CACHE_ENTRIES) {
     const firstKey = cache.keys().next().value;
     if (firstKey) cache.delete(firstKey);
@@ -53,7 +88,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ users: [] });
   }
 
-  // Check if query contains only valid username characters
   if (!/^[\w]+$/.test(q)) {
     return NextResponse.json({ users: [] });
   }
@@ -71,7 +105,7 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const bearerToken = process.env.X_BEARER_TOKEN;
+  const bearerToken = await getBearerToken();
   if (!bearerToken) {
     return NextResponse.json({ users: [] });
   }
@@ -86,6 +120,32 @@ export async function GET(request: NextRequest) {
       headers: { Authorization: `Bearer ${bearerToken}` },
       signal: AbortSignal.timeout(5000),
     });
+
+    // If 401/403, token may be revoked — clear cache and retry once
+    if (res.status === 401 || res.status === 403) {
+      cachedBearerToken = null;
+      const freshToken = await getBearerToken();
+      if (!freshToken) return NextResponse.json({ users: [] });
+
+      const retryRes = await fetch(url.toString(), {
+        headers: { Authorization: `Bearer ${freshToken}` },
+        signal: AbortSignal.timeout(5000),
+      });
+
+      if (!retryRes.ok) return NextResponse.json({ users: [] });
+
+      const retryJson = await retryRes.json();
+      const retryUsers: XUser[] = retryJson.data || [];
+      setCache(q, retryUsers);
+      return NextResponse.json({
+        users: retryUsers.map((u) => ({
+          xId: u.id,
+          xUsername: u.username,
+          xName: u.name,
+          xProfileImage: u.profile_image_url || '',
+        })),
+      });
+    }
 
     if (!res.ok) {
       return NextResponse.json({ users: [] });
