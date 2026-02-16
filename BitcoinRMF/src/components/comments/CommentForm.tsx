@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { Send, X } from 'lucide-react';
+import MentionTextarea from './MentionTextarea';
 
 const MAX_LENGTH = 500;
 
@@ -38,7 +39,7 @@ export default function CommentForm({ onSubmit, onCancel, placeholder = 'Share y
         />
       )}
       <div className="flex-1">
-        <textarea
+        <MentionTextarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder={placeholder}
