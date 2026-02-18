@@ -18,16 +18,25 @@ export async function GET() {
       (t) => t.riskRating === RiskRating.CRITICAL || t.riskRating === RiskRating.HIGH
     ).length;
     const totalSeverity = threats.reduce((sum, t) => sum + t.severityScore, 0);
-    const activeRemediations = threats.reduce(
-      (sum, t) =>
-        sum +
-        t.remediationStrategies.filter(
-          (r) => r.status === 'IN_PROGRESS' || r.status === 'PLANNED'
-        ).length,
-      0
-    );
-
     const vulnerabilities = SEED_VULNERABILITIES;
+
+    const activeRemediations =
+      threats.reduce(
+        (sum, t) =>
+          sum +
+          t.remediationStrategies.filter(
+            (r) => r.status === 'IN_PROGRESS' || r.status === 'PLANNED'
+          ).length,
+        0
+      ) +
+      vulnerabilities.reduce(
+        (sum, v) =>
+          sum +
+          v.remediationStrategies.filter(
+            (r) => r.status === 'IN_PROGRESS' || r.status === 'PLANNED'
+          ).length,
+        0
+      );
     const risks = deriveRisks(threats, vulnerabilities);
     const criticalHighRiskCount = risks.filter(
       (r) => r.riskRating === RiskRating.CRITICAL || r.riskRating === RiskRating.HIGH
@@ -68,10 +77,15 @@ export async function GET() {
     (t) => t.risk_rating === 'CRITICAL' || t.risk_rating === 'HIGH'
   ).length;
   const totalSeverity = threats.reduce((sum, t) => sum + (t.severity_score || 0), 0);
-  const activeRemediations = threats.reduce((sum, t) => {
-    const strats = (t.remediation_strategies as Array<{ status: string }>) || [];
-    return sum + strats.filter((r) => r.status === 'IN_PROGRESS' || r.status === 'PLANNED').length;
-  }, 0);
+  const activeRemediations =
+    threats.reduce((sum, t) => {
+      const strats = (t.remediation_strategies as Array<{ status: string }>) || [];
+      return sum + strats.filter((r) => r.status === 'IN_PROGRESS' || r.status === 'PLANNED').length;
+    }, 0) +
+    vulns.reduce((sum, v) => {
+      const strats = ((v as { remediation_strategies?: Array<{ status: string }> }).remediation_strategies) || [];
+      return sum + strats.filter((r) => r.status === 'IN_PROGRESS' || r.status === 'PLANNED').length;
+    }, 0);
 
   // Compute risk counts from threat-vulnerability pairings
   let totalRisks = 0;
