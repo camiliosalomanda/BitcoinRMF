@@ -54,45 +54,55 @@ export default function DashboardPage() {
 
         {/* Live Bitcoin Metrics */}
         {metrics && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Bitcoin size={14} className="text-[#f7931a]" />
-                <span className="text-[10px] text-gray-500 uppercase tracking-wide">Price</span>
+          <div className="space-y-1">
+            {metrics.isStale && (
+              <p className="text-[10px] text-yellow-500">Metrics may be delayed — upstream APIs unreachable</p>
+            )}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Bitcoin size={14} className="text-[#f7931a]" />
+                  <span className="text-[10px] text-gray-500 uppercase tracking-wide">Price</span>
+                </div>
+                <p className="text-lg font-bold text-white">
+                  {metrics.price ? `$${metrics.price.toLocaleString()}` : '—'}
+                </p>
+                {metrics.priceChange24h != null && (
+                  <p className={`text-[10px] mt-0.5 ${metrics.priceChange24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {metrics.priceChange24h >= 0 ? '+' : ''}{metrics.priceChange24h}% 24h
+                  </p>
+                )}
               </div>
-              <p className="text-lg font-bold text-white">
-                {metrics.price ? `$${metrics.price.toLocaleString()}` : '—'}
-              </p>
-            </div>
-            <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Cpu size={14} className="text-[#f7931a]" />
-                <span className="text-[10px] text-gray-500 uppercase tracking-wide">Hashrate</span>
+              <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Cpu size={14} className="text-[#f7931a]" />
+                  <span className="text-[10px] text-gray-500 uppercase tracking-wide">Hashrate</span>
+                </div>
+                <p className="text-lg font-bold text-white">
+                  {metrics.hashrate ? `${metrics.hashrate} EH/s` : '—'}
+                </p>
               </div>
-              <p className="text-lg font-bold text-white">
-                {metrics.hashrate ? `${metrics.hashrate} EH/s` : '—'}
-              </p>
-            </div>
-            <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <BarChart3 size={14} className="text-[#f7931a]" />
-                <span className="text-[10px] text-gray-500 uppercase tracking-wide">Block</span>
+              <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <BarChart3 size={14} className="text-[#f7931a]" />
+                  <span className="text-[10px] text-gray-500 uppercase tracking-wide">Block</span>
+                </div>
+                <p className="text-lg font-bold text-white">
+                  {metrics.blockHeight ? `#${metrics.blockHeight.toLocaleString()}` : '—'}
+                </p>
               </div>
-              <p className="text-lg font-bold text-white">
-                {metrics.blockHeight ? `#${metrics.blockHeight.toLocaleString()}` : '—'}
-              </p>
-            </div>
-            <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Layers size={14} className="text-[#f7931a]" />
-                <span className="text-[10px] text-gray-500 uppercase tracking-wide">Mempool</span>
+              <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Layers size={14} className="text-[#f7931a]" />
+                  <span className="text-[10px] text-gray-500 uppercase tracking-wide">Mempool</span>
+                </div>
+                <p className="text-lg font-bold text-white">
+                  {metrics.mempoolSize ? `${metrics.mempoolSize.toLocaleString()} tx` : '—'}
+                </p>
+                {metrics.medianFee && (
+                  <p className="text-[10px] text-gray-500 mt-0.5">{metrics.medianFee} sat/vB</p>
+                )}
               </div>
-              <p className="text-lg font-bold text-white">
-                {metrics.mempoolSize ? `${metrics.mempoolSize.toLocaleString()} tx` : '—'}
-              </p>
-              {metrics.medianFee && (
-                <p className="text-[10px] text-gray-500 mt-0.5">{metrics.medianFee} sat/vB</p>
-              )}
             </div>
           </div>
         )}

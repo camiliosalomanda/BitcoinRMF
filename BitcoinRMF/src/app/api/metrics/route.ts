@@ -9,64 +9,80 @@ export interface BitcoinMetrics {
   mempoolSize: number | null;  // unconfirmed tx count
   mempoolVSize: number | null; // vMB
   medianFee: number | null;    // sat/vB
+  isStale: boolean;
   lastUpdated: string;
 }
 
-// Server-side cache: 5-minute TTL
+// Server-side cache: 2-minute TTL
 let cachedMetrics: BitcoinMetrics | null = null;
 let cacheExpiry = 0;
-const CACHE_TTL_MS = 5 * 60 * 1000;
+const CACHE_TTL_MS = 2 * 60 * 1000;
 
-async function fetchJSON<T>(url: string, timeoutMs = 8000): Promise<T | null> {
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    const res = await fetch(url, { signal: controller.signal });
-    clearTimeout(timer);
-    if (!res.ok) return null;
-    return await res.json() as T;
-  } catch {
-    return null;
+async function fetchJSON<T>(url: string, timeoutMs = 10000): Promise<T | null> {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      const res = await fetch(url, { signal: controller.signal });
+      clearTimeout(timer);
+      if (!res.ok) return null;
+      return await res.json() as T;
+    } catch {
+      if (attempt === 1) return null;
+      // Brief pause before retry
+      await new Promise((r) => setTimeout(r, 500));
+    }
   }
+  return null;
 }
 
 async function fetchMetrics(): Promise<BitcoinMetrics> {
-  // Fetch from multiple public APIs in parallel
-  const [mempoolStats, mempoolDifficulty, mempoolBlocks, blockchainTicker] = await Promise.all([
+  const [mempoolStats, mempoolBlocks, mempoolHashrate, coingecko, fees] = await Promise.all([
     // mempool.space: mempool stats
-    fetchJSON<{ count: number; vsize: number; total_fee: number }>('https://mempool.space/api/mempool'),
-    // mempool.space: difficulty adjustment
-    fetchJSON<{ difficultyChange: number; progressPercent: number }>('https://mempool.space/api/v1/difficulty-adjustment'),
-    // mempool.space: recent blocks (hashrate + height)
-    fetchJSON<Array<{ height: number; difficulty: number; extras?: { avgFeeRate?: number } }>>('https://mempool.space/api/v1/blocks'),
-    // blockchain.info: ticker for price
-    fetchJSON<{ USD: { last: number; symbol: string } }>('https://blockchain.info/ticker'),
+    fetchJSON<{ count: number; vsize: number; total_fee: number }>(
+      'https://mempool.space/api/mempool'
+    ),
+    // mempool.space: recent blocks (height + difficulty)
+    fetchJSON<Array<{ height: number; difficulty: number }>>(
+      'https://mempool.space/api/v1/blocks'
+    ),
+    // mempool.space: actual mining hashrate
+    fetchJSON<{ currentHashrate: number; currentDifficulty: number }>(
+      'https://mempool.space/api/v1/mining/hashrate/3d'
+    ),
+    // CoinGecko: price + 24h change
+    fetchJSON<{ bitcoin: { usd: number; usd_24h_change: number } }>(
+      'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true'
+    ),
+    // mempool.space: recommended fees
+    fetchJSON<{ halfHourFee: number; hourFee: number; fastestFee: number }>(
+      'https://mempool.space/api/v1/fees/recommended'
+    ),
   ]);
 
-  // mempool.space recommended fees for median
-  const fees = await fetchJSON<{ halfHourFee: number; hourFee: number; fastestFee: number }>('https://mempool.space/api/v1/fees/recommended');
-
-  // Price from blockchain.info
-  const price = blockchainTicker?.USD?.last ?? null;
-
-  // Hashrate: derive from difficulty (rough estimate)
-  // hashrate ≈ difficulty × 2^32 / 600 (H/s), convert to EH/s
   const latestBlock = mempoolBlocks?.[0];
-  const difficulty = latestBlock?.difficulty ?? null;
+
+  // Hashrate from mempool.space mining endpoint (actual, not estimated)
+  // currentHashrate is in H/s, convert to EH/s
   let hashrate: number | null = null;
-  if (difficulty) {
-    hashrate = Math.round((difficulty * 2 ** 32 / 600) / 1e18 * 100) / 100; // EH/s
+  if (mempoolHashrate?.currentHashrate) {
+    hashrate = Math.round((mempoolHashrate.currentHashrate / 1e18) * 100) / 100;
   }
 
   return {
-    price,
-    priceChange24h: null, // blockchain.info ticker doesn't provide 24h change
+    price: coingecko?.bitcoin?.usd ?? null,
+    priceChange24h: coingecko?.bitcoin?.usd_24h_change
+      ? Math.round(coingecko.bitcoin.usd_24h_change * 100) / 100
+      : null,
     hashrate,
-    difficulty,
+    difficulty: mempoolHashrate?.currentDifficulty ?? latestBlock?.difficulty ?? null,
     blockHeight: latestBlock?.height ?? null,
     mempoolSize: mempoolStats?.count ?? null,
-    mempoolVSize: mempoolStats?.vsize ? Math.round(mempoolStats.vsize / 1_000_000 * 100) / 100 : null,
+    mempoolVSize: mempoolStats?.vsize
+      ? Math.round((mempoolStats.vsize / 1_000_000) * 100) / 100
+      : null,
     medianFee: fees?.halfHourFee ?? null,
+    isStale: false,
     lastUpdated: new Date().toISOString(),
   };
 }
@@ -84,12 +100,12 @@ export async function GET() {
     cacheExpiry = now + CACHE_TTL_MS;
 
     return NextResponse.json(metrics, {
-      headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=60' },
+      headers: { 'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=30' },
     });
   } catch {
     // Return stale cache if available, otherwise error
     if (cachedMetrics) {
-      return NextResponse.json(cachedMetrics);
+      return NextResponse.json({ ...cachedMetrics, isStale: true });
     }
     return NextResponse.json(
       { error: 'Failed to fetch Bitcoin metrics' },

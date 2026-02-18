@@ -10,7 +10,7 @@ export function useBitcoinMetrics() {
   return useQuery<BitcoinMetrics>({
     queryKey: ['bitcoin-metrics'],
     queryFn: () => apiClient<BitcoinMetrics>('/api/metrics'),
-    refetchInterval: 5 * 60 * 1000, // 5 minutes
-    staleTime: 4 * 60 * 1000,       // 4 minutes
+    refetchInterval: 2 * 60 * 1000, // 2 minutes (matches server cache TTL)
+    staleTime: 90 * 1000,           // 90 seconds
   });
 }
