@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a0a12"/>
+      <stop offset="100%" stop-color="#111118"/>
+    </linearGradient>
+    <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f7931a"/>
+      <stop offset="100%" stop-color="#e8820e"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="400" rx="0" fill="url(#bgGrad)"/>
+
+  <!-- Outer ring -->
+  <circle cx="200" cy="175" r="108" fill="none" stroke="url(#ringGrad)" stroke-width="4" opacity="0.3"/>
+
+  <!-- Inner ring -->
+  <circle cx="200" cy="175" r="88" fill="none" stroke="#f7931a" stroke-width="3" opacity="0.15"/>
+
+  <!-- Bitcoin symbol background circle -->
+  <circle cx="200" cy="175" r="72" fill="#f7931a" opacity="0.08"/>
+
+  <!-- Bitcoin ₿ symbol -->
+  <text x="200" y="200" text-anchor="middle" font-family="'SF Pro Display', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="120" font-weight="700" fill="#f7931a">
+    &#x20BF;
+  </text>
+
+  <!-- Subtle crosshair lines (risk analysis motif) -->
+  <line x1="200" y1="90" x2="200" y2="105" stroke="#f7931a" stroke-width="1.5" opacity="0.4"/>
+  <line x1="200" y1="245" x2="200" y2="260" stroke="#f7931a" stroke-width="1.5" opacity="0.4"/>
+  <line x1="108" y1="175" x2="123" y2="175" stroke="#f7931a" stroke-width="1.5" opacity="0.4"/>
+  <line x1="277" y1="175" x2="292" y2="175" stroke="#f7931a" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- Small corner tick marks (framework/precision motif) -->
+  <line x1="115" y1="90" x2="130" y2="90" stroke="#f7931a" stroke-width="1" opacity="0.2"/>
+  <line x1="115" y1="90" x2="115" y2="105" stroke="#f7931a" stroke-width="1" opacity="0.2"/>
+  <line x1="285" y1="90" x2="270" y2="90" stroke="#f7931a" stroke-width="1" opacity="0.2"/>
+  <line x1="285" y1="90" x2="285" y2="105" stroke="#f7931a" stroke-width="1" opacity="0.2"/>
+  <line x1="115" y1="260" x2="130" y2="260" stroke="#f7931a" stroke-width="1" opacity="0.2"/>
+  <line x1="115" y1="260" x2="115" y2="245" stroke="#f7931a" stroke-width="1" opacity="0.2"/>
+  <line x1="285" y1="260" x2="270" y2="260" stroke="#f7931a" stroke-width="1" opacity="0.2"/>
+  <line x1="285" y1="260" x2="285" y2="245" stroke="#f7931a" stroke-width="1" opacity="0.2"/>
+
+  <!-- RMF text -->
+  <text x="200" y="330" text-anchor="middle" font-family="'SF Pro Display', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="48" font-weight="600" letter-spacing="12" fill="white">
+    RMF
+  </text>
+
+  <!-- Subtle underline accent -->
+  <line x1="155" y1="345" x2="245" y2="345" stroke="#f7931a" stroke-width="2" opacity="0.5"/>
+</svg>
