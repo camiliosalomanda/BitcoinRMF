@@ -21,7 +21,10 @@ import {
   CheckCircle,
   Clock,
   AlertCircle,
+  FileText,
 } from 'lucide-react';
+import { BIPRecommendation } from '@/types';
+import ScoreGauge from '@/components/ScoreGauge';
 
 const NIST_STAGES = Object.values(NistRmfStage);
 
@@ -256,6 +259,70 @@ export default function RiskDetail({ risk }: RiskDetailProps) {
           )}
         </div>
       </div>
+
+      {/* Related BIPs */}
+      {(() => {
+        const bipNums = Array.from(new Set([
+          ...threat.relatedBIPs,
+          ...vulnerability.relatedBIPs,
+          ...remediations.flatMap((r) => r.relatedBIPs),
+        ]));
+        const relatedBIPEvals = bipNums
+          .map((num) => allBIPs.find((b) => b.bipNumber === num))
+          .filter(Boolean) as typeof allBIPs;
+        if (bipNums.length === 0) return null;
+        const REC_COLORS: Record<string, string> = {
+          [BIPRecommendation.ESSENTIAL]: 'text-green-400 bg-green-400/10 border-green-400/30',
+          [BIPRecommendation.RECOMMENDED]: 'text-blue-400 bg-blue-400/10 border-blue-400/30',
+          [BIPRecommendation.OPTIONAL]: 'text-yellow-400 bg-yellow-400/10 border-yellow-400/30',
+          [BIPRecommendation.UNNECESSARY]: 'text-gray-400 bg-gray-400/10 border-gray-400/30',
+          [BIPRecommendation.HARMFUL]: 'text-red-400 bg-red-400/10 border-red-400/30',
+        };
+        return (
+          <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <FileText size={16} className="text-[#f7931a]" />
+              <h2 className="text-sm font-semibold text-white">Related BIPs ({bipNums.length})</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {relatedBIPEvals.map((bip) => (
+                <Link
+                  key={bip.id}
+                  href={`/bips/${bip.id}`}
+                  className="border border-[#2a2a3a] rounded-lg p-4 hover:border-[#3a3a4a] transition-colors"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-mono text-[#f7931a] font-bold">{bip.bipNumber}</span>
+                    {bip.aiEvaluated && (
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${REC_COLORS[bip.recommendation] || ''}`}>
+                        {bip.recommendation}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-200 line-clamp-1">{bip.title}</p>
+                  {bip.aiEvaluated && (
+                    <div className="mt-2">
+                      <ScoreGauge score={bip.necessityScore} label="Necessity" size="sm" />
+                    </div>
+                  )}
+                </Link>
+              ))}
+              {/* BIP numbers without matching evaluations */}
+              {bipNums
+                .filter((num) => !allBIPs.some((b) => b.bipNumber === num))
+                .map((num) => (
+                  <div
+                    key={num}
+                    className="border border-[#2a2a3a] rounded-lg p-4"
+                  >
+                    <span className="text-sm font-mono text-gray-400">{num}</span>
+                    <p className="text-xs text-gray-600 mt-1">Not yet synced</p>
+                  </div>
+                ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Affected Components */}
       <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-5">

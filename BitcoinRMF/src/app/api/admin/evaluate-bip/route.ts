@@ -9,6 +9,9 @@ import {
   addSecurityHeaders,
 } from '@/lib/security';
 import { fetchBIPContent, BIP_EVALUATE_SYSTEM_PROMPT } from '@/lib/github-bips';
+import { threatFromRow, vulnerabilityFromRow } from '@/lib/transform';
+import { SEED_THREATS, SEED_VULNERABILITIES } from '@/lib/seed-data';
+import type { Threat, Vulnerability } from '@/types';
 
 export async function POST(request: NextRequest) {
   const admin = await isAdmin();
@@ -78,9 +81,86 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Fetch threats and vulnerabilities that reference this BIP
+    const bipNumber = bipRow.bip_number; // e.g. "BIP-0340"
+    const shortBipNumber = `BIP-${parseInt(bipNumber.replace(/\D/g, ''), 10)}`; // e.g. "BIP-340"
+    const bipVariants = [bipNumber, shortBipNumber];
+
+    let relatedThreats: Threat[] = [];
+    let relatedVulns: Vulnerability[] = [];
+
+    const { data: threatRows } = await supabase
+      .from('threats')
+      .select('*')
+      .in('status', ['published', 'under_review']);
+
+    const { data: vulnRows } = await supabase
+      .from('vulnerabilities')
+      .select('*')
+      .in('status', ['published', 'under_review']);
+
+    if (threatRows && threatRows.length > 0) {
+      const allThreats = threatRows.map(threatFromRow);
+      relatedThreats = allThreats.filter((t) =>
+        t.relatedBIPs.some((b) => bipVariants.includes(b))
+      );
+    } else {
+      relatedThreats = SEED_THREATS.filter((t) =>
+        t.relatedBIPs.some((b) => bipVariants.includes(b))
+      );
+    }
+
+    if (vulnRows && vulnRows.length > 0) {
+      const allVulns = vulnRows.map(vulnerabilityFromRow);
+      relatedVulns = allVulns.filter((v) =>
+        v.relatedBIPs.some((b) => bipVariants.includes(b))
+      );
+    } else {
+      relatedVulns = SEED_VULNERABILITIES.filter((v) =>
+        v.relatedBIPs.some((b) => bipVariants.includes(b))
+      );
+    }
+
+    // Build system risk context for the AI prompt
+    let riskContext = '';
+    if (relatedThreats.length > 0 || relatedVulns.length > 0) {
+      riskContext = '\n\n--- System Risk Context ---\n';
+      riskContext += `This BIP (${shortBipNumber}) is referenced by ${relatedThreats.length} threat(s) and ${relatedVulns.length} vulnerability(ies) in the system.\n\n`;
+
+      if (relatedThreats.length > 0) {
+        riskContext += 'Related Threats:\n';
+        for (const t of relatedThreats) {
+          riskContext += `- ID: "${t.id}" | Name: "${t.name}" | Rating: ${t.riskRating} | Score: ${t.severityScore}/25 | STRIDE: ${t.strideCategory} | Likelihood: ${t.likelihood}/5\n`;
+        }
+        riskContext += '\n';
+      }
+
+      if (relatedVulns.length > 0) {
+        riskContext += 'Related Vulnerabilities:\n';
+        for (const v of relatedVulns) {
+          riskContext += `- ID: "${v.id}" | Name: "${v.name}" | Rating: ${v.vulnerabilityRating} | Score: ${v.vulnerabilityScore}/25 | Severity: ${v.severity}/5\n`;
+        }
+        riskContext += '\n';
+      }
+
+      // Derived risk scores (threat × vulnerability pairings)
+      const riskPairings: string[] = [];
+      for (const t of relatedThreats) {
+        for (const v of relatedVulns) {
+          const score = t.likelihood * v.severity;
+          riskPairings.push(`- "${t.name}" × "${v.name}": risk score ${score}/25`);
+        }
+      }
+      if (riskPairings.length > 0) {
+        riskContext += 'Derived Risk Pairings:\n' + riskPairings.join('\n') + '\n';
+      }
+
+      riskContext += '\nUse the threat IDs above in your threatsAddressed array.\n';
+    }
+
     // Send to Claude for evaluation
     const client = new Anthropic();
-    const prompt = `Evaluate ${bipRow.bip_number} ("${bipRow.title}"):\n\n${content}`;
+    const prompt = `Evaluate ${bipRow.bip_number} ("${bipRow.title}"):${riskContext}\n\n${content}`;
 
     const response = await client.messages.create({
       model: 'claude-sonnet-4-20250514',

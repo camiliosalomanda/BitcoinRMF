@@ -224,11 +224,121 @@ export function bipId(num: number): string {
   return `bip-${String(num).padStart(4, '0')}`;
 }
 
+// ===========================================
+// Sync Engine — shared by cron, auto-sync, and admin manual trigger
+// ===========================================
+
+export interface SyncResult {
+  total: number;
+  inserted: number;
+  updated: number;
+  errors: string[];
+}
+
+/**
+ * Sync all BIP metadata from GitHub into Supabase.
+ * Upserts by bip_number — never overwrites scoring/AI fields.
+ * Used by cron, auto-sync on stale data, and admin manual trigger.
+ */
+export async function syncBIPsFromGitHub(
+  supabase: SupabaseClient
+): Promise<SyncResult> {
+  const results: SyncResult = { total: 0, inserted: 0, updated: 0, errors: [] };
+
+  const githubBIPs = await fetchBIPIndex();
+  results.total = githubBIPs.length;
+
+  // Fetch existing BIP numbers to decide insert vs update
+  const { data: existingRows } = await supabase
+    .from('bip_evaluations')
+    .select('id, bip_number');
+
+  const existingByNumber = new Map<string, string>();
+  for (const row of existingRows || []) {
+    existingByNumber.set(row.bip_number, row.id);
+  }
+
+  for (const bip of githubBIPs) {
+    const bipNumber = bip.bipNumber;
+    const existingId = existingByNumber.get(bipNumber);
+    const mappedStatus = mapGitHubStatus(bip.status);
+
+    if (existingId) {
+      const { error } = await supabase
+        .from('bip_evaluations')
+        .update({
+          title: bip.title,
+          bip_status: mappedStatus,
+          bip_author: bip.author || null,
+          bip_type: bip.type || null,
+          bip_layer: bip.layer || null,
+        })
+        .eq('id', existingId);
+
+      if (error) {
+        results.errors.push(`Update ${bipNumber}: ${error.message}`);
+      } else {
+        results.updated++;
+      }
+    } else {
+      const { error } = await supabase
+        .from('bip_evaluations')
+        .insert({
+          id: bipId(bip.number),
+          bip_number: bipNumber,
+          title: bip.title,
+          bip_status: mappedStatus,
+          bip_author: bip.author || null,
+          bip_type: bip.type || null,
+          bip_layer: bip.layer || null,
+          status: 'published',
+        });
+
+      if (error) {
+        results.errors.push(`Insert ${bipNumber}: ${error.message}`);
+      } else {
+        results.inserted++;
+      }
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Check whether BIP data is stale and needs a re-sync.
+ * Stale = no GitHub-synced BIPs exist, or newest update is older than maxAgeMs.
+ */
+export async function isBIPDataStale(
+  supabase: SupabaseClient,
+  maxAgeMs = 24 * 60 * 60 * 1000 // 24 hours
+): Promise<boolean> {
+  const { data } = await supabase
+    .from('bip_evaluations')
+    .select('updated_at')
+    .like('id', 'bip-%')       // deterministic IDs from sync
+    .not('id', 'like', 'bip-eval-%') // exclude manually-created BIPs
+    .order('updated_at', { ascending: false })
+    .limit(1);
+
+  if (!data || data.length === 0) return true;
+
+  const lastUpdated = new Date(data[0].updated_at).getTime();
+  return Date.now() - lastUpdated > maxAgeMs;
+}
+
+// Type import for the sync function — avoid importing the full supabase module
+type SupabaseClient = {
+  from: (table: string) => ReturnType<import('@supabase/supabase-js').SupabaseClient['from']>;
+};
+
 /**
  * Shared system prompt for BIP AI evaluation.
  * Used by both /api/bips/evaluate and /api/admin/evaluate-bip.
  */
 export const BIP_EVALUATE_SYSTEM_PROMPT = `You are an expert Bitcoin protocol analyst specializing in BIP (Bitcoin Improvement Proposal) evaluation against the current threat landscape.
+
+You will be provided with the system's current threat and vulnerability data that references this BIP. Use this to ground your evaluation in real risk data. When system risk context is provided, use those specific threat IDs in threatsAddressed rather than generic descriptions.
 
 When evaluating a BIP, you MUST return a JSON object with this exact structure:
 
@@ -238,7 +348,7 @@ When evaluating a BIP, you MUST return a JSON object with this exact structure:
   "summary": "2-3 sentence summary of what this BIP does",
   "recommendation": "ESSENTIAL|RECOMMENDED|OPTIONAL|UNNECESSARY|HARMFUL",
   "necessityScore": 0-100,
-  "threatsAddressed": ["Description of threat 1 it mitigates", "Description of threat 2"],
+  "threatsAddressed": ["threat-id-1", "threat-id-2"],
   "mitigationEffectiveness": 0-100,
   "communityConsensus": 0-100,
   "implementationReadiness": 0-100,

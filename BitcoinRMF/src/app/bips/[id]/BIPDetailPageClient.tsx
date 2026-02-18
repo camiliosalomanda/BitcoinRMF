@@ -9,6 +9,8 @@ import CommentSection from '@/components/comments/CommentSection';
 import { DetailSkeleton } from '@/components/LoadingSkeleton';
 import { useBIP, useEvaluateBIP } from '@/hooks/useBIPs';
 import { useThreats } from '@/hooks/useThreats';
+import { useVulnerabilities } from '@/hooks/useVulnerabilities';
+import { useRisks } from '@/hooks/useRisks';
 import { useUserRole } from '@/hooks/useUserRole';
 import { BIPRecommendation } from '@/types';
 import ShareToXButton from '@/components/ShareToXButton';
@@ -27,6 +29,8 @@ export default function BIPDetailPageClient() {
   const id = params.id as string;
   const { data: bip, isLoading: bipLoading } = useBIP(id);
   const { data: threats = [] } = useThreats();
+  const { data: vulnerabilities = [] } = useVulnerabilities();
+  const { data: derivedRisks = [] } = useRisks();
   const { isAdmin } = useUserRole();
   const evaluateBIP = useEvaluateBIP();
 
@@ -48,7 +52,24 @@ export default function BIPDetailPageClient() {
     );
   }
 
-  const addressedThreats = threats.filter((t) => bip.threatsAddressed.includes(t.id));
+  const bipNumber = bip.bipNumber; // e.g. "BIP-0340"
+  const shortBipNumber = `BIP-${parseInt(bipNumber.replace(/\D/g, ''), 10)}`; // e.g. "BIP-340"
+  const bipVariants = [bipNumber, shortBipNumber];
+
+  const addressedThreats = threats.filter((t) =>
+    bip.threatsAddressed.includes(t.id) ||
+    t.relatedBIPs.some((b) => bipVariants.includes(b))
+  );
+
+  const addressedVulnerabilities = vulnerabilities.filter((v) =>
+    v.relatedBIPs.some((b) => bipVariants.includes(b))
+  );
+
+  const relatedRisks = derivedRisks.filter((r) =>
+    r.threat.relatedBIPs.some((b) => bipVariants.includes(b)) ||
+    r.vulnerability.relatedBIPs.some((b) => bipVariants.includes(b))
+  );
+
   const evaluated = bip.aiEvaluated;
 
   return (
@@ -168,8 +189,8 @@ export default function BIPDetailPageClient() {
           </div>
         )}
 
-        {/* Threats Addressed — only for evaluated BIPs */}
-        {evaluated && (
+        {/* Threats Addressed */}
+        {(evaluated || addressedThreats.length > 0) && (
           <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-5">
             <h2 className="text-sm font-semibold text-white mb-3">
               Threats Addressed ({addressedThreats.length})
@@ -191,6 +212,58 @@ export default function BIPDetailPageClient() {
               {addressedThreats.length === 0 && (
                 <p className="text-xs text-gray-600">No linked threats</p>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Related Vulnerabilities */}
+        {addressedVulnerabilities.length > 0 && (
+          <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-5">
+            <h2 className="text-sm font-semibold text-white mb-3">
+              Related Vulnerabilities ({addressedVulnerabilities.length})
+            </h2>
+            <div className="space-y-2">
+              {addressedVulnerabilities.map((vuln) => (
+                <Link
+                  key={vuln.id}
+                  href={`/vulnerabilities/${vuln.id}`}
+                  className="flex items-center justify-between p-3 rounded-lg border border-[#2a2a3a] hover:border-[#3a3a4a] transition-colors"
+                >
+                  <div>
+                    <p className="text-sm text-white">{vuln.name}</p>
+                    <p className="text-[10px] text-gray-500">Score: {vuln.vulnerabilityScore}/25</p>
+                  </div>
+                  <SeverityBadge rating={vuln.vulnerabilityRating} size="sm" />
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Related Risks */}
+        {relatedRisks.length > 0 && (
+          <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-5">
+            <h2 className="text-sm font-semibold text-white mb-3">
+              Related Risks ({relatedRisks.length})
+            </h2>
+            <div className="space-y-2">
+              {relatedRisks.map((risk) => (
+                <Link
+                  key={`${risk.threatId}-${risk.vulnerabilityId}`}
+                  href={`/risks/${risk.threatId}/${risk.vulnerabilityId}`}
+                  className="flex items-center justify-between p-3 rounded-lg border border-[#2a2a3a] hover:border-[#3a3a4a] transition-colors"
+                >
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-white">{risk.threatName}</span>
+                      <span className="text-[10px] text-gray-600">&rarr;</span>
+                      <span className="text-sm text-amber-400">{risk.vulnerabilityName}</span>
+                    </div>
+                    <p className="text-[10px] text-gray-500 mt-0.5">Score: {risk.riskScore}/25</p>
+                  </div>
+                  <SeverityBadge rating={risk.riskRating} size="sm" />
+                </Link>
+              ))}
             </div>
           </div>
         )}

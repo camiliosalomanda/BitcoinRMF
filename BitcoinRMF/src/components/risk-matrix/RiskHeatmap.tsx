@@ -1,10 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { RiskMatrixCell, LIKELIHOOD_LABELS, IMPACT_LABELS, LikelihoodLevel, ImpactLevel } from '@/types';
 import { getMatrixCellColor } from '@/lib/scoring';
 import SeverityBadge from '@/components/SeverityBadge';
 import Link from 'next/link';
+import { useBIPs } from '@/hooks/useBIPs';
 
 interface RiskHeatmapProps {
   matrix: RiskMatrixCell[][];
@@ -12,6 +14,8 @@ interface RiskHeatmapProps {
 
 export default function RiskHeatmap({ matrix }: RiskHeatmapProps) {
   const [selectedCell, setSelectedCell] = useState<RiskMatrixCell | null>(null);
+  const { data: allBIPs = [] } = useBIPs();
+  const router = useRouter();
 
   return (
     <div className="space-y-6">
@@ -113,6 +117,42 @@ export default function RiskHeatmap({ matrix }: RiskHeatmapProps) {
                     <p className="text-[10px] text-gray-500 mt-0.5">
                       Score: {risk.riskScore}/25
                     </p>
+                    {(() => {
+                      const bipNums = Array.from(new Set([
+                        ...risk.threat.relatedBIPs,
+                        ...risk.vulnerability.relatedBIPs,
+                      ]));
+                      if (bipNums.length === 0) return null;
+                      return (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {bipNums.map((bipNum) => {
+                            const bip = allBIPs.find((b) => b.bipNumber === bipNum);
+                            return bip ? (
+                              <span
+                                key={bipNum}
+                                role="link"
+                                tabIndex={0}
+                                className="text-[9px] px-1.5 py-0.5 rounded bg-[#f7931a]/10 text-[#f7931a] border border-[#f7931a]/20 hover:bg-[#f7931a]/20 transition-colors cursor-pointer"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  router.push(`/bips/${bip.id}`);
+                                }}
+                              >
+                                {bipNum}
+                              </span>
+                            ) : (
+                              <span
+                                key={bipNum}
+                                className="text-[9px] px-1.5 py-0.5 rounded bg-gray-400/10 text-gray-400 border border-gray-400/20"
+                              >
+                                {bipNum}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
                   </div>
                   <SeverityBadge rating={risk.riskRating} size="sm" />
                 </Link>
