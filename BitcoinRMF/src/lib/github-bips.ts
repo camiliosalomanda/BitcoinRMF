@@ -338,7 +338,17 @@ type SupabaseClient = {
  */
 export const BIP_EVALUATE_SYSTEM_PROMPT = `You are an expert Bitcoin protocol analyst specializing in BIP (Bitcoin Improvement Proposal) evaluation against the current threat landscape.
 
-You will be provided with the system's current threat and vulnerability data that references this BIP. Use this to ground your evaluation in real risk data. When system risk context is provided, use those specific threat IDs in threatsAddressed rather than generic descriptions.
+You will be provided with:
+1. The system's current threat and vulnerability data that references this BIP.
+2. Verified external metrics from public APIs (mempool.space, bitnodes.io, GitHub).
+
+CRITICAL: When verified external metrics are provided, you MUST base your scores on these measurements:
+- For adoptionPercentage: use the measured on-chain transaction percentage and/or node support percentage. Do NOT invent adoption numbers.
+- For communityConsensus: use the BIP status, PR merge status, and implementation count provided.
+- For implementationReadiness: use the provided GitHub merge status and activation data.
+- For mitigationEffectiveness: use the system risk data (threat scores, vulnerability scores) to assess how well this BIP covers the identified attack vectors.
+
+When system risk context is provided, use those specific threat IDs in threatsAddressed rather than generic descriptions.
 
 When evaluating a BIP, you MUST return a JSON object with this exact structure:
 

@@ -8,13 +8,65 @@ import SeverityBadge from '@/components/SeverityBadge';
 import CommentSection from '@/components/comments/CommentSection';
 import { DetailSkeleton } from '@/components/LoadingSkeleton';
 import { useBIP, useEvaluateBIP } from '@/hooks/useBIPs';
+import { useBIPMetrics } from '@/hooks/useBIPMetrics';
 import { useThreats } from '@/hooks/useThreats';
 import { useVulnerabilities } from '@/hooks/useVulnerabilities';
 import { useRisks } from '@/hooks/useRisks';
 import { useUserRole } from '@/hooks/useUserRole';
 import { BIPRecommendation } from '@/types';
+import type { MetricSource } from '@/lib/bip-metrics';
 import ShareToXButton from '@/components/ShareToXButton';
-import { ArrowLeft, Sparkles } from 'lucide-react';
+import { ArrowLeft, Sparkles, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
+import { useState } from 'react';
+
+function SourceAttribution({ sources, summary }: { sources?: MetricSource[]; summary?: string }) {
+  const [expanded, setExpanded] = useState(false);
+
+  if (!sources || sources.length === 0) {
+    return summary ? (
+      <p className="text-[10px] text-gray-500 mt-1 text-center">{summary}</p>
+    ) : null;
+  }
+
+  const primarySource = sources[0];
+  const primaryText = summary || primarySource.detail;
+  const truncated = primaryText.length > 60 ? primaryText.slice(0, 57) + '...' : primaryText;
+
+  return (
+    <div className="mt-1.5 w-full">
+      <p className="text-[10px] text-gray-500 text-center leading-tight">{truncated}</p>
+      {sources.length > 0 && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="flex items-center gap-0.5 mx-auto mt-0.5 text-[9px] text-gray-600 hover:text-[#f7931a] transition-colors"
+        >
+          {expanded ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
+          {expanded ? 'Hide' : 'View'} sources
+        </button>
+      )}
+      {expanded && (
+        <div className="mt-1 space-y-0.5">
+          {sources.map((src, i) => (
+            <div key={i} className="text-[9px] text-gray-600 flex items-start gap-1">
+              <span className="shrink-0 text-gray-700">{src.name}:</span>
+              <span className="break-words">{src.detail}</span>
+              {src.url && (
+                <a
+                  href={src.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="shrink-0 text-[#f7931a] hover:text-[#f7931a]/80"
+                >
+                  <ExternalLink size={8} />
+                </a>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const RECOMMENDATION_COLORS: Record<BIPRecommendation, string> = {
   [BIPRecommendation.ESSENTIAL]: 'text-green-400 bg-green-400/10 border-green-400/30',
@@ -33,6 +85,7 @@ export default function BIPDetailPageClient() {
   const { data: derivedRisks = [] } = useRisks();
   const { isAdmin } = useUserRole();
   const evaluateBIP = useEvaluateBIP();
+  const { data: metrics } = useBIPMetrics(id);
 
   if (bipLoading) {
     return (
@@ -168,16 +221,39 @@ export default function BIPDetailPageClient() {
         {/* Scores Grid — only for evaluated BIPs */}
         {evaluated && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { label: 'Mitigation', score: bip.mitigationEffectiveness },
-              { label: 'Consensus', score: bip.communityConsensus },
-              { label: 'Readiness', score: bip.implementationReadiness },
-              { label: 'Adoption', score: bip.adoptionPercentage },
-            ].map((item) => (
-              <div key={item.label} className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-4 flex flex-col items-center">
-                <ScoreGauge score={item.score} label={item.label} size="md" />
-              </div>
-            ))}
+            <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-4 flex flex-col items-center">
+              <ScoreGauge score={bip.mitigationEffectiveness} label="Mitigation" size="md" />
+              <SourceAttribution
+                sources={metrics ? [{
+                  name: 'Risk Data',
+                  detail: metrics.mitigation.relatedThreats > 0
+                    ? `${metrics.mitigation.relatedThreats} threats (avg ${metrics.mitigation.avgThreatScore}/25)`
+                    : metrics.mitigation.note,
+                }] : undefined}
+                summary={!metrics ? 'AI estimate' : undefined}
+              />
+            </div>
+            <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-4 flex flex-col items-center">
+              <ScoreGauge score={bip.communityConsensus} label="Consensus" size="md" />
+              <SourceAttribution
+                sources={metrics?.consensus.sources}
+                summary={!metrics ? 'AI estimate' : undefined}
+              />
+            </div>
+            <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-4 flex flex-col items-center">
+              <ScoreGauge score={bip.implementationReadiness} label="Readiness" size="md" />
+              <SourceAttribution
+                sources={metrics?.readiness.sources}
+                summary={!metrics ? 'AI estimate' : undefined}
+              />
+            </div>
+            <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-4 flex flex-col items-center">
+              <ScoreGauge score={bip.adoptionPercentage} label="Adoption" size="md" />
+              <SourceAttribution
+                sources={metrics?.adoption.sources}
+                summary={!metrics ? 'AI estimate' : undefined}
+              />
+            </div>
           </div>
         )}
 

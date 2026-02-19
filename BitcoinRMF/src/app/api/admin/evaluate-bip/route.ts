@@ -11,6 +11,7 @@ import {
 import { fetchBIPContent, BIP_EVALUATE_SYSTEM_PROMPT } from '@/lib/github-bips';
 import { threatFromRow, vulnerabilityFromRow } from '@/lib/transform';
 import { SEED_THREATS, SEED_VULNERABILITIES } from '@/lib/seed-data';
+import { fetchAllBIPMetrics, formatMetricsForPrompt } from '@/lib/bip-metrics';
 import type { Threat, Vulnerability } from '@/types';
 
 export async function POST(request: NextRequest) {
@@ -158,9 +159,24 @@ export async function POST(request: NextRequest) {
       riskContext += '\nUse the threat IDs above in your threatsAddressed array.\n';
     }
 
+    // Fetch verified external metrics for this BIP
+    let metricsContext = '';
+    try {
+      const metrics = await fetchAllBIPMetrics(
+        bipRow.bip_number,
+        bipRow.bip_status || 'PROPOSED',
+        relatedThreats.map((t) => ({ name: t.name, severityScore: t.severityScore })),
+        relatedVulns.map((v) => ({ name: v.name, vulnerabilityScore: v.vulnerabilityScore })),
+      );
+      metricsContext = '\n\n' + formatMetricsForPrompt(metrics);
+    } catch {
+      // Non-fatal: AI can still evaluate without external metrics
+      metricsContext = '\n\n--- Verified External Metrics ---\nExternal metric APIs unavailable. Use your best judgment based on the BIP content and risk data.';
+    }
+
     // Send to Claude for evaluation
     const client = new Anthropic();
-    const prompt = `Evaluate ${bipRow.bip_number} ("${bipRow.title}"):${riskContext}\n\n${content}`;
+    const prompt = `Evaluate ${bipRow.bip_number} ("${bipRow.title}"):${riskContext}${metricsContext}\n\n${content}`;
 
     const response = await client.messages.create({
       model: 'claude-sonnet-4-20250514',
