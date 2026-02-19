@@ -3,7 +3,20 @@ import { authOptions } from '@/lib/auth';
 
 const ADMIN_X_IDS = (process.env.ADMIN_X_IDS || '').split(',').filter(Boolean);
 
+const DEV_BYPASS =
+  process.env.NODE_ENV === 'development' &&
+  process.env.DEV_BYPASS_AUTH === 'true';
+
 export async function getSessionUser() {
+  if (DEV_BYPASS) {
+    return {
+      xId: 'dev-admin',
+      xUsername: 'dev',
+      xName: 'Dev Admin',
+      isAdmin: true,
+    };
+  }
+
   const session = await getServerSession(authOptions);
   if (!session?.user?.xId) return null;
   return {
