@@ -228,11 +228,19 @@ export function bipId(num: number): string {
 // Sync Engine — shared by cron, auto-sync, and admin manual trigger
 // ===========================================
 
+export interface StatusChange {
+  bipId: string;
+  bipNumber: string;
+  oldStatus: string;
+  newStatus: string;
+}
+
 export interface SyncResult {
   total: number;
   inserted: number;
   updated: number;
   errors: string[];
+  statusChanges: StatusChange[];
 }
 
 /**
@@ -243,27 +251,37 @@ export interface SyncResult {
 export async function syncBIPsFromGitHub(
   supabase: SupabaseClient
 ): Promise<SyncResult> {
-  const results: SyncResult = { total: 0, inserted: 0, updated: 0, errors: [] };
+  const results: SyncResult = { total: 0, inserted: 0, updated: 0, errors: [], statusChanges: [] };
 
   const githubBIPs = await fetchBIPIndex();
   results.total = githubBIPs.length;
 
-  // Fetch existing BIP numbers to decide insert vs update
+  // Fetch existing BIP rows (including bip_status for change detection)
   const { data: existingRows } = await supabase
     .from('bip_evaluations')
-    .select('id, bip_number');
+    .select('id, bip_number, bip_status');
 
-  const existingByNumber = new Map<string, string>();
+  const existingByNumber = new Map<string, { id: string; bip_status: string | null }>();
   for (const row of existingRows || []) {
-    existingByNumber.set(row.bip_number, row.id);
+    existingByNumber.set(row.bip_number, { id: row.id, bip_status: row.bip_status });
   }
 
   for (const bip of githubBIPs) {
     const bipNumber = bip.bipNumber;
-    const existingId = existingByNumber.get(bipNumber);
+    const existing = existingByNumber.get(bipNumber);
     const mappedStatus = mapGitHubStatus(bip.status);
 
-    if (existingId) {
+    if (existing) {
+      // Detect status change
+      if (existing.bip_status && existing.bip_status !== mappedStatus) {
+        results.statusChanges.push({
+          bipId: existing.id,
+          bipNumber,
+          oldStatus: existing.bip_status,
+          newStatus: mappedStatus,
+        });
+      }
+
       const { error } = await supabase
         .from('bip_evaluations')
         .update({
@@ -273,7 +291,7 @@ export async function syncBIPsFromGitHub(
           bip_type: bip.type || null,
           bip_layer: bip.layer || null,
         })
-        .eq('id', existingId);
+        .eq('id', existing.id);
 
       if (error) {
         results.errors.push(`Update ${bipNumber}: ${error.message}`);

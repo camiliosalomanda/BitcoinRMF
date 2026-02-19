@@ -1,0 +1,20 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/sync-bips",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/process-queue",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/scan-threats",
+      "schedule": "0 */4 * * *"
+    },
+    {
+      "path": "/api/cron/scan-fud",
+      "schedule": "0 */2 * * *"
+    }
+  ]
+}

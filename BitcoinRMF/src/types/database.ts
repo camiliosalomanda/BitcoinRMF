@@ -151,6 +151,8 @@ export interface Database {
           bip_author: string | null;
           bip_type: string | null;
           bip_layer: string | null;
+          last_evaluated_at: string | null;
+          evaluation_trigger: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -174,6 +176,8 @@ export interface Database {
           bip_author?: string | null;
           bip_type?: string | null;
           bip_layer?: string | null;
+          last_evaluated_at?: string | null;
+          evaluation_trigger?: string | null;
         };
         Update: {
           id?: string;
@@ -195,6 +199,8 @@ export interface Database {
           bip_author?: string | null;
           bip_type?: string | null;
           bip_layer?: string | null;
+          last_evaluated_at?: string | null;
+          evaluation_trigger?: string | null;
         };
         Relationships: [];
       };
@@ -229,6 +235,7 @@ export interface Database {
           debunk_summary?: string | null;
           related_threats?: string[];
           price_impact_estimate?: string | null;
+          last_seen?: string;
           submitted_by?: string | null;
           submitted_by_name?: string | null;
         };
@@ -244,6 +251,7 @@ export interface Database {
           debunk_summary?: string | null;
           related_threats?: string[];
           price_impact_estimate?: string | null;
+          last_seen?: string;
           submitted_by?: string | null;
           submitted_by_name?: string | null;
         };
@@ -406,6 +414,120 @@ export interface Database {
           x_profile_image?: string;
           content?: string;
           parent_id?: string | null;
+        };
+        Relationships: [];
+      };
+      reeval_queue: {
+        Row: {
+          id: string;
+          bip_id: string;
+          bip_number: string;
+          reason: string;
+          details: string | null;
+          priority: number;
+          status: string;
+          error_message: string | null;
+          attempts: number;
+          max_attempts: number;
+          created_at: string;
+          started_at: string | null;
+          completed_at: string | null;
+        };
+        Insert: {
+          bip_id: string;
+          bip_number: string;
+          reason: string;
+          details?: string | null;
+          priority?: number;
+          status?: string;
+          error_message?: string | null;
+          attempts?: number;
+          max_attempts?: number;
+        };
+        Update: {
+          bip_id?: string;
+          bip_number?: string;
+          reason?: string;
+          details?: string | null;
+          priority?: number;
+          status?: string;
+          error_message?: string | null;
+          attempts?: number;
+          max_attempts?: number;
+          started_at?: string | null;
+          completed_at?: string | null;
+        };
+        Relationships: [];
+      };
+      external_signals: {
+        Row: {
+          id: string;
+          source: string;
+          external_id: string;
+          source_url: string | null;
+          title: string;
+          description: string | null;
+          severity: string | null;
+          published_date: string | null;
+          related_bips: string[];
+          cve_id: string | null;
+          processed: boolean;
+          threat_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          source: string;
+          external_id: string;
+          source_url?: string | null;
+          title: string;
+          description?: string | null;
+          severity?: string | null;
+          published_date?: string | null;
+          related_bips?: string[];
+          cve_id?: string | null;
+          processed?: boolean;
+          threat_id?: string | null;
+        };
+        Update: {
+          source?: string;
+          external_id?: string;
+          source_url?: string | null;
+          title?: string;
+          description?: string | null;
+          severity?: string | null;
+          published_date?: string | null;
+          related_bips?: string[];
+          cve_id?: string | null;
+          processed?: boolean;
+          threat_id?: string | null;
+        };
+        Relationships: [];
+      };
+      monitoring_runs: {
+        Row: {
+          id: string;
+          pipeline: string;
+          status: string;
+          started_at: string;
+          completed_at: string | null;
+          result: unknown;
+          error_message: string | null;
+        };
+        Insert: {
+          pipeline: string;
+          status: string;
+          started_at?: string;
+          completed_at?: string | null;
+          result?: unknown;
+          error_message?: string | null;
+        };
+        Update: {
+          pipeline?: string;
+          status?: string;
+          started_at?: string;
+          completed_at?: string | null;
+          result?: unknown;
+          error_message?: string | null;
         };
         Relationships: [];
       };
