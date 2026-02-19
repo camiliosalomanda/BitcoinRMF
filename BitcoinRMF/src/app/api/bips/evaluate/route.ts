@@ -6,6 +6,7 @@ import {
   rateLimitResponse,
   addSecurityHeaders,
   sanitizeInput,
+  extractJSON,
 } from '@/lib/security';
 import { BIP_EVALUATE_SYSTEM_PROMPT } from '@/lib/github-bips';
 
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
 
     let evaluation;
     try {
-      evaluation = JSON.parse(text);
+      evaluation = JSON.parse(extractJSON(text));
     } catch {
       console.error('Failed to parse AI response for BIP evaluation');
       return addSecurityHeaders(

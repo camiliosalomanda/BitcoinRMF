@@ -6,6 +6,7 @@ import {
   rateLimitResponse,
   addSecurityHeaders,
   sanitizeInput,
+  extractJSON,
 } from '@/lib/security';
 
 const SYSTEM_PROMPT = `You are an expert Bitcoin analyst specializing in evaluating FUD (Fear, Uncertainty, and Doubt) narratives. You provide evidence-based analysis to separate legitimate concerns from misinformation.
@@ -79,7 +80,7 @@ export async function POST(request: NextRequest) {
 
     let analysis;
     try {
-      analysis = JSON.parse(text);
+      analysis = JSON.parse(extractJSON(text));
     } catch {
       console.error('Failed to parse AI response for FUD analysis');
       return addSecurityHeaders(

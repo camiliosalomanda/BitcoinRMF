@@ -6,6 +6,7 @@ import {
   rateLimitResponse,
   addSecurityHeaders,
   sanitizeInput,
+  extractJSON,
 } from '@/lib/security';
 
 const SYSTEM_PROMPT = `You are an expert Bitcoin security analyst specializing in vulnerability assessment. You analyze weaknesses in Bitcoin's protocol, implementation, and ecosystem using NIST RMF and FAIR frameworks.
@@ -83,7 +84,7 @@ export async function POST(request: NextRequest) {
 
     let analysis;
     try {
-      analysis = JSON.parse(text);
+      analysis = JSON.parse(extractJSON(text));
     } catch {
       console.error('Failed to parse AI response for vulnerability analysis');
       return addSecurityHeaders(

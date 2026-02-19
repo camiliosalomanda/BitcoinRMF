@@ -7,6 +7,7 @@ import {
   getClientId,
   rateLimitResponse,
   addSecurityHeaders,
+  extractJSON,
 } from '@/lib/security';
 import { fetchBIPContent, BIP_EVALUATE_SYSTEM_PROMPT } from '@/lib/github-bips';
 import { threatFromRow, vulnerabilityFromRow } from '@/lib/transform';
@@ -185,12 +186,13 @@ export async function POST(request: NextRequest) {
       messages: [{ role: 'user', content: prompt }],
     });
 
-    const text = response.content[0].type === 'text' ? response.content[0].text : '';
+    const rawText = response.content[0].type === 'text' ? response.content[0].text : '';
 
     let evaluation: Record<string, unknown>;
     try {
-      evaluation = JSON.parse(text);
+      evaluation = JSON.parse(extractJSON(rawText));
     } catch {
+      console.error('[evaluate-bip] Failed to parse AI response:', rawText.slice(0, 500));
       return addSecurityHeaders(
         NextResponse.json({ error: 'Failed to parse AI response' }, { status: 500 })
       );

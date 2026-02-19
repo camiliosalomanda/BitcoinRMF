@@ -78,3 +78,16 @@ export function sanitizeInput(input: string): string {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#x27;');
 }
+
+/** Extract JSON from an AI response that may be wrapped in markdown fences or preamble text. */
+export function extractJSON(raw: string): string {
+  const trimmed = raw.trim();
+  const fenceMatch = trimmed.match(/```(?:json)?\s*\n?([\s\S]*?)```/);
+  if (fenceMatch) return fenceMatch[1].trim();
+  const braceStart = trimmed.indexOf('{');
+  const braceEnd = trimmed.lastIndexOf('}');
+  if (braceStart !== -1 && braceEnd > braceStart) {
+    return trimmed.slice(braceStart, braceEnd + 1);
+  }
+  return trimmed;
+}
