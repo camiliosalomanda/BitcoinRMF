@@ -20,23 +20,13 @@ export async function GET() {
     const totalSeverity = threats.reduce((sum, t) => sum + t.severityScore, 0);
     const vulnerabilities = SEED_VULNERABILITIES;
 
-    const activeRemediations =
-      threats.reduce(
-        (sum, t) =>
-          sum +
-          t.remediationStrategies.filter(
-            (r) => r.status === 'IN_PROGRESS' || r.status === 'PLANNED'
-          ).length,
-        0
-      ) +
-      vulnerabilities.reduce(
-        (sum, v) =>
-          sum +
-          v.remediationStrategies.filter(
-            (r) => r.status === 'IN_PROGRESS' || r.status === 'PLANNED'
-          ).length,
-        0
-      );
+    // Count remediations from vulnerabilities only (matches remediations page)
+    const activeRemediations = vulnerabilities.reduce(
+      (sum, v) =>
+        sum + v.remediationStrategies.length,
+      0
+    );
+
     const risks = deriveRisks(threats, vulnerabilities);
     const criticalHighRiskCount = risks.filter(
       (r) => r.riskRating === RiskRating.CRITICAL || r.riskRating === RiskRating.HIGH
@@ -61,38 +51,48 @@ export async function GET() {
   }
 
   // Fetch from Supabase
-  const [threatsRes, bipsRes, fudRes, vulnsRes] = await Promise.all([
+  const [threatsRes, bipsRes, fudRes, vulnsRes, junctionRes] = await Promise.all([
     supabase.from('threats').select('*').eq('status', 'published'),
     supabase.from('bip_evaluations').select('*').eq('status', 'published'),
     supabase.from('fud_analyses').select('*').eq('status', 'published'),
     supabase.from('vulnerabilities').select('*').eq('status', 'published'),
+    supabase.from('threat_vulnerabilities').select('threat_id, vulnerability_id'),
   ]);
 
   const threats = threatsRes.data || [];
   const bips = bipsRes.data || [];
   const fud = fudRes.data || [];
   const vulns = vulnsRes.data || [];
+  const junctionRows = junctionRes.data || [];
 
   const criticalHighCount = threats.filter(
     (t) => t.risk_rating === 'CRITICAL' || t.risk_rating === 'HIGH'
   ).length;
   const totalSeverity = threats.reduce((sum, t) => sum + (t.severity_score || 0), 0);
-  const activeRemediations =
-    threats.reduce((sum, t) => {
-      const strats = (t.remediation_strategies as Array<{ status: string }>) || [];
-      return sum + strats.filter((r) => r.status === 'IN_PROGRESS' || r.status === 'PLANNED').length;
-    }, 0) +
-    vulns.reduce((sum, v) => {
-      const strats = ((v as { remediation_strategies?: Array<{ status: string }> }).remediation_strategies) || [];
-      return sum + strats.filter((r) => r.status === 'IN_PROGRESS' || r.status === 'PLANNED').length;
-    }, 0);
 
-  // Compute risk counts from threat-vulnerability pairings
+  // Count remediations from vulnerabilities only (matches remediations page)
+  const activeRemediations = vulns.reduce((sum, v) => {
+    const strats = ((v as { remediation_strategies?: Array<{ status: string }> }).remediation_strategies) || [];
+    return sum + strats.length;
+  }, 0);
+
+  // Build junction map for threat→vulnerability lookups
+  const junctionMap = new Map<string, string[]>();
+  for (const row of junctionRows) {
+    const existing = junctionMap.get(row.threat_id) || [];
+    existing.push(row.vulnerability_id);
+    junctionMap.set(row.threat_id, existing);
+  }
+
+  // Compute risk counts from threat-vulnerability pairings (denormalized + junction table)
   let totalRisks = 0;
   let criticalHighRiskCount = 0;
   for (const t of threats) {
-    const vulnIds = (t.vulnerability_ids as string[]) || [];
-    for (const vid of vulnIds) {
+    const denormalizedIds = (t.vulnerability_ids as string[]) || [];
+    const junctionIds = junctionMap.get(t.id as string) || [];
+    const allVulnIds = [...new Set([...denormalizedIds, ...junctionIds])];
+
+    for (const vid of allVulnIds) {
       const v = vulns.find((vv: { id: string }) => vv.id === vid);
       if (!v) continue;
       totalRisks++;
