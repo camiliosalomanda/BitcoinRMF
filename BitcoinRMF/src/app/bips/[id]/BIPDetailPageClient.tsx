@@ -12,7 +12,6 @@ import { useBIPMetrics } from '@/hooks/useBIPMetrics';
 import { useThreats } from '@/hooks/useThreats';
 import { useVulnerabilities } from '@/hooks/useVulnerabilities';
 import { useRisks } from '@/hooks/useRisks';
-import { useUserRole } from '@/hooks/useUserRole';
 import { BIPRecommendation } from '@/types';
 import type { MetricSource } from '@/lib/bip-metrics';
 import ShareToXButton from '@/components/ShareToXButton';
@@ -83,7 +82,6 @@ export default function BIPDetailPageClient() {
   const { data: threats = [] } = useThreats();
   const { data: vulnerabilities = [] } = useVulnerabilities();
   const { data: derivedRisks = [] } = useRisks();
-  const { isAdmin } = useUserRole();
   const evaluateBIP = useEvaluateBIP();
   const { data: metrics } = useBIPMetrics(id);
 
@@ -180,7 +178,7 @@ export default function BIPDetailPageClient() {
                     hashtags={['Bitcoin', 'BIP', 'BitcoinRMF']}
                   />
                 </>
-              ) : isAdmin ? (
+              ) : (
                 <button
                   onClick={() => evaluateBIP.mutate(bip.id)}
                   disabled={evaluateBIP.isPending}
@@ -198,7 +196,7 @@ export default function BIPDetailPageClient() {
                     </>
                   )}
                 </button>
-              ) : null}
+              )}
             </div>
           </div>
         </div>
@@ -208,7 +206,7 @@ export default function BIPDetailPageClient() {
           <div className="bg-[#111118] border border-yellow-400/20 rounded-xl p-4">
             <p className="text-xs text-yellow-400">
               This BIP has not been AI-evaluated yet. Only metadata from the GitHub repository is available.
-              {isAdmin && ' Click "Evaluate with AI" above to run a full analysis.'}
+              {' Click "Evaluate with AI" above to run a full analysis.'}
             </p>
             {evaluateBIP.isError && (
               <p className="text-xs text-red-400 mt-2">

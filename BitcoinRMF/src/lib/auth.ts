@@ -22,6 +22,15 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async jwt({ token, profile }) {
+      // Dev bypass: return fake admin token
+      if (process.env.NODE_ENV === 'development' && process.env.DEV_BYPASS_AUTH === 'true') {
+        token.xId = 'dev-admin';
+        token.xUsername = 'dev';
+        token.xName = 'Dev Admin';
+        token.xProfileImage = '';
+        token.isAdmin = true;
+        return token;
+      }
       if (profile) {
         // OAuth 1.0a returns flat profile; OAuth 2.0 nests under .data
         const p = profile as Record<string, unknown>;
@@ -47,6 +56,20 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
+      // Dev bypass: return fake admin session
+      if (process.env.NODE_ENV === 'development' && process.env.DEV_BYPASS_AUTH === 'true') {
+        return {
+          ...session,
+          user: {
+            ...session.user,
+            xId: 'dev-admin',
+            xUsername: 'dev',
+            xName: 'Dev Admin',
+            xProfileImage: '',
+            isAdmin: true,
+          },
+        };
+      }
       if (session.user) {
         session.user.xId = token.xId as string;
         session.user.xUsername = token.xUsername as string;

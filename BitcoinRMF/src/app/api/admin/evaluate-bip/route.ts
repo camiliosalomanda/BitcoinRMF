@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
-import { isAdmin } from '@/lib/admin';
 import { getSupabaseAdmin } from '@/lib/supabase-helpers';
 import {
   checkRateLimit,
@@ -16,11 +15,6 @@ import { fetchAllBIPMetrics, formatMetricsForPrompt } from '@/lib/bip-metrics';
 import type { Threat, Vulnerability } from '@/types';
 
 export async function POST(request: NextRequest) {
-  const admin = await isAdmin();
-  if (!admin) {
-    return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
-  }
-
   const clientId = getClientId(request);
   const { allowed, remaining, resetIn } = checkRateLimit(`analysis:${clientId}`, 'analysis');
   if (!allowed) {
