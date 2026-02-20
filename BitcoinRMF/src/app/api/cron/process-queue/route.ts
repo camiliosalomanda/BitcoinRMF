@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-helpers';
 import { verifyCronAuth, processReEvalQueue, logMonitoringRun } from '@/lib/pipeline';
-import { publishToX, formatBIPEvaluatedPost } from '@/lib/x-posting';
+import { publishToX, formatBIPEvaluatedPost, retryFailedPosts } from '@/lib/x-posting';
 
 /**
  * GET /api/cron/process-queue
@@ -51,12 +51,18 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Retry any previously failed X posts
+    const retryResult = await retryFailedPosts(supabase);
+
     await logMonitoringRun(supabase, 'reeval', 'completed', {
       processed: result.processed,
       succeeded: result.succeeded,
       failed: result.failed,
       skipped: result.skipped,
       xPosted,
+      xRetried: retryResult.retried,
+      xRetrySucceeded: retryResult.succeeded,
+      xRetryAbandoned: retryResult.abandoned,
     }, undefined, runId);
 
     console.log(

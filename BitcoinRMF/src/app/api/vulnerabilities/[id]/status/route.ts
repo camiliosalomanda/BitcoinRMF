@@ -4,11 +4,15 @@ import { getSessionUser } from '@/lib/admin';
 import { vulnerabilityStatus } from '@/lib/validators';
 import { vulnerabilityFromRow, type VulnerabilityRow } from '@/lib/transform';
 import { writeAuditLog } from '@/lib/supabase-helpers';
+import { publishToX, formatVulnerabilityPost } from '@/lib/x-posting';
 import { z } from 'zod';
 
 const statusUpdateSchema = z.object({
   status: vulnerabilityStatus,
 });
+
+// Statuses that warrant an X post
+const POST_WORTHY_STATUSES = new Set(['CONFIRMED', 'EXPLOITABLE']);
 
 export async function PATCH(
   request: NextRequest,
@@ -50,6 +54,21 @@ export async function PATCH(
     userName: user.xName,
     diff: { vuln_status: parsed.data.status },
   });
+
+  // Post to X when vulnerability is confirmed or exploitable
+  if (POST_WORTHY_STATUSES.has(parsed.data.status)) {
+    const row = data as VulnerabilityRow;
+    const content = formatVulnerabilityPost({
+      name: row.name,
+      vulnerability_rating: row.vulnerability_rating,
+    });
+    await publishToX(supabase, {
+      content,
+      triggerType: 'vulnerability_status_change',
+      entityType: 'vulnerability',
+      entityId: id,
+    });
+  }
 
   return NextResponse.json(vulnerabilityFromRow(data as VulnerabilityRow));
 }

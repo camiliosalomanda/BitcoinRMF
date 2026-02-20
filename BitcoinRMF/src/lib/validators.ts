@@ -164,7 +164,7 @@ export type FUDInput = z.infer<typeof fudInputSchema>;
 // --- Vote Input ---
 
 export const voteInputSchema = z.object({
-  targetType: z.enum(['threat', 'fud']),
+  targetType: z.enum(['threat', 'fud', 'vulnerability']),
   targetId: z.string().min(1),
   voteValue: z.union([z.literal(1), z.literal(-1)]),
 });

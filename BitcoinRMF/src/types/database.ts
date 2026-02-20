@@ -558,6 +558,7 @@ export interface Database {
           entity_id: string | null;
           status: string;
           error_message: string | null;
+          retry_count: number;
           posted_at: string | null;
           created_at: string;
         };
@@ -569,6 +570,7 @@ export interface Database {
           entity_id?: string | null;
           status?: string;
           error_message?: string | null;
+          retry_count?: number;
           posted_at?: string | null;
         };
         Update: {
@@ -579,6 +581,7 @@ export interface Database {
           entity_id?: string | null;
           status?: string;
           error_message?: string | null;
+          retry_count?: number;
           posted_at?: string | null;
         };
         Relationships: [];

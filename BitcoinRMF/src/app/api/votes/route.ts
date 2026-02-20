@@ -4,7 +4,7 @@ import { getSessionUser } from '@/lib/admin';
 import { voteInputSchema } from '@/lib/validators';
 import { checkRateLimit, rateLimitResponse } from '@/lib/security';
 import { VOTE_THRESHOLD } from '@/lib/constants';
-import { publishToX, formatThreatPost, formatFUDPost } from '@/lib/x-posting';
+import { publishToX, formatThreatPost, formatFUDPost, formatVulnerabilityPost } from '@/lib/x-posting';
 
 export async function POST(request: NextRequest) {
   const user = await getSessionUser();
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Verify target exists and is in a voteable status
-  const table = targetType === 'threat' ? 'threats' : 'fud_analyses';
+  const table = targetType === 'threat' ? 'threats' : targetType === 'vulnerability' ? 'vulnerabilities' : 'fud_analyses';
   const { data: target, error: targetError } = await supabase
     .from(table)
     .select('id, status, submitted_by')
@@ -121,6 +121,8 @@ export async function POST(request: NextRequest) {
       if (publishedItem) {
         const content = targetType === 'threat'
           ? formatThreatPost(publishedItem as { name: string; risk_rating?: string; severity_score?: number })
+          : targetType === 'vulnerability'
+          ? formatVulnerabilityPost(publishedItem as { name: string; vulnerability_rating?: string })
           : formatFUDPost(publishedItem as { narrative: string; validity_score?: number });
         await publishToX(supabase, {
           content,

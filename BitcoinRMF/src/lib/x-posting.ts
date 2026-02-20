@@ -210,6 +210,87 @@ export function formatWeeklySummaryPost(
   return truncate(text, 280);
 }
 
+// --- Retry failed posts ---
+
+const MAX_RETRIES = 3;
+
+export async function retryFailedPosts(
+  supabase: ReturnType<typeof createAdminClient>
+): Promise<{ retried: number; succeeded: number; abandoned: number }> {
+  if (!isXPostingEnabled()) {
+    return { retried: 0, succeeded: 0, abandoned: 0 };
+  }
+
+  // Fetch failed posts from the last 48 hours, oldest first
+  const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+  const { data: failedPosts } = await supabase
+    .from('x_posts')
+    .select('*')
+    .eq('status', 'failed')
+    .gte('created_at', cutoff)
+    .order('created_at', { ascending: true })
+    .limit(5); // Process up to 5 retries per cycle
+
+  if (!failedPosts || failedPosts.length === 0) {
+    return { retried: 0, succeeded: 0, abandoned: 0 };
+  }
+
+  let succeeded = 0;
+  let abandoned = 0;
+
+  for (const post of failedPosts) {
+    const attempts = (post.retry_count || 0) + 1;
+
+    if (attempts > MAX_RETRIES) {
+      // Mark as permanently failed
+      await supabase
+        .from('x_posts')
+        .update({ status: 'abandoned' })
+        .eq('id', post.id);
+      abandoned++;
+      continue;
+    }
+
+    try {
+      const postId = await postToX(post.content);
+
+      await supabase
+        .from('x_posts')
+        .update({
+          post_id: postId,
+          status: 'posted',
+          posted_at: new Date().toISOString(),
+          retry_count: attempts,
+          error_message: null,
+        })
+        .eq('id', post.id);
+
+      await writeAuditLog(supabase, {
+        entityType: 'x_post',
+        entityId: post.id,
+        action: 'retry_succeeded',
+        userId: 'system:x-bot',
+        userName: '@BitcoinRMF',
+        diff: { attempt: attempts, postId },
+      });
+
+      succeeded++;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      await supabase
+        .from('x_posts')
+        .update({
+          status: 'failed',
+          retry_count: attempts,
+          error_message: `Retry #${attempts}: ${message}`,
+        })
+        .eq('id', post.id);
+    }
+  }
+
+  return { retried: failedPosts.length, succeeded, abandoned };
+}
+
 // --- Helpers ---
 
 function truncate(str: string, max: number): string {

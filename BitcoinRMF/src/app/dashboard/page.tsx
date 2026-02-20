@@ -4,6 +4,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import StatCard from '@/components/StatCard';
 import SeverityBadge from '@/components/SeverityBadge';
 import RiskTrendChart from '@/components/RiskTrendChart';
+import XPostHistory from '@/components/XPostHistory';
 import { StatsSkeleton } from '@/components/LoadingSkeleton';
 import { useThreats } from '@/hooks/useThreats';
 import { useFUD } from '@/hooks/useFUD';
@@ -394,6 +395,15 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
+
+        {/* X Post History */}
+        <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Twitter size={14} className="text-[#f7931a]" />
+            <h2 className="text-sm font-semibold text-white">@BitcoinRMF Post History</h2>
+          </div>
+          <XPostHistory />
+        </div>
       </div>
     </DashboardLayout>
   );
