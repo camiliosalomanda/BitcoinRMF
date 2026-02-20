@@ -531,6 +531,58 @@ export interface Database {
         };
         Relationships: [];
       };
+      risk_snapshots: {
+        Row: {
+          id: string;
+          snapshot_date: string;
+          stats: unknown;
+          created_at: string;
+        };
+        Insert: {
+          snapshot_date: string;
+          stats: unknown;
+        };
+        Update: {
+          snapshot_date?: string;
+          stats?: unknown;
+        };
+        Relationships: [];
+      };
+      x_posts: {
+        Row: {
+          id: string;
+          post_id: string | null;
+          content: string;
+          trigger_type: string;
+          entity_type: string | null;
+          entity_id: string | null;
+          status: string;
+          error_message: string | null;
+          posted_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          post_id?: string | null;
+          content: string;
+          trigger_type: string;
+          entity_type?: string | null;
+          entity_id?: string | null;
+          status?: string;
+          error_message?: string | null;
+          posted_at?: string | null;
+        };
+        Update: {
+          post_id?: string | null;
+          content?: string;
+          trigger_type?: string;
+          entity_type?: string | null;
+          entity_id?: string | null;
+          status?: string;
+          error_message?: string | null;
+          posted_at?: string | null;
+        };
+        Relationships: [];
+      };
     };
   };
 }

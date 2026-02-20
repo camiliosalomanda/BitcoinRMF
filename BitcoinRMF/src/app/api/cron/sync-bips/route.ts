@@ -3,6 +3,7 @@ import { getSupabaseAdmin, writeAuditLog } from '@/lib/supabase-helpers';
 import { syncBIPsFromGitHub } from '@/lib/github-bips';
 import { verifyCronAuth, queueReEvaluations, logMonitoringRun } from '@/lib/pipeline';
 import type { ReEvalTrigger } from '@/lib/pipeline';
+import { publishToX, formatBIPChangePost } from '@/lib/x-posting';
 
 /**
  * GET /api/cron/sync-bips
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
 
       queued = await queueReEvaluations(supabase, triggers);
 
-      // Write audit log for each status change
+      // Write audit log and post to X for each status change
       for (const sc of results.statusChanges) {
         await writeAuditLog(supabase, {
           entityType: 'bip',
@@ -47,6 +48,18 @@ export async function GET(request: NextRequest) {
           userId: 'system:cron',
           userName: 'BIP Sync Cron',
           diff: { oldStatus: sc.oldStatus, newStatus: sc.newStatus },
+        });
+
+        const content = formatBIPChangePost({
+          bip_number: sc.bipNumber,
+          oldStatus: sc.oldStatus,
+          newStatus: sc.newStatus,
+        });
+        await publishToX(supabase, {
+          content,
+          triggerType: 'bip_status_change',
+          entityType: 'bip',
+          entityId: sc.bipId,
         });
       }
     }

@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-helpers';
 import { verifyCronAuth, logMonitoringRun } from '@/lib/pipeline';
 import { fetchAllFUDSignals } from '@/lib/fud-sources';
 import type { FUDSignal } from '@/lib/fud-sources';
+import { publishToX, formatFUDPost } from '@/lib/x-posting';
 
 /**
  * GET /api/cron/scan-fud
@@ -86,11 +87,31 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Post high-engagement FUD signals to X
+    let xPosted = 0;
+    for (const signal of signals) {
+      const engagement = signal.engagement.likes + signal.engagement.retweets + signal.engagement.replies;
+      if (engagement >= 5000) {
+        const content = formatFUDPost({
+          narrative: signal.text.slice(0, 200),
+          validity_score: undefined,
+        });
+        const result = await publishToX(supabase, {
+          content,
+          triggerType: 'fud_signal',
+          entityType: 'external_signal',
+          entityId: signal.externalId,
+        });
+        if (result.posted) xPosted++;
+      }
+    }
+
     await logMonitoringRun(supabase, 'fud_scan', 'completed', {
       totalSignals: signals.length,
       inserted,
       duplicates,
       existingUpdated,
+      xPosted,
       sources: {
         reddit: signals.filter((s) => s.source === 'reddit').length,
         twitter: signals.filter((s) => s.source === 'twitter').length,

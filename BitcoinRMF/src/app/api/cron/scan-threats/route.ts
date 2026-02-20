@@ -9,6 +9,7 @@ import {
 import type { ReEvalTrigger } from '@/lib/pipeline';
 import { fetchAllThreatSignals } from '@/lib/threat-sources';
 import type { ExternalThreatSignal } from '@/lib/threat-sources';
+import { publishToX, formatThreatPost } from '@/lib/x-posting';
 
 /**
  * GET /api/cron/scan-threats
@@ -100,12 +101,32 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Post critical/high severity signals to X
+    let xPosted = 0;
+    for (const signal of highSeveritySignals) {
+      if (signal.severity === 'critical' || signal.severity === 'high') {
+        const content = formatThreatPost({
+          name: signal.title,
+          risk_rating: signal.severity.toUpperCase(),
+          severity_score: signal.severity === 'critical' ? 25 : 16,
+        });
+        const result = await publishToX(supabase, {
+          content,
+          triggerType: 'threat_signal',
+          entityType: 'external_signal',
+          entityId: signal.externalId,
+        });
+        if (result.posted) xPosted++;
+      }
+    }
+
     await logMonitoringRun(supabase, 'threat_scan', 'completed', {
       totalSignals: signals.length,
       inserted,
       duplicates,
       highSeverity: highSeveritySignals.length,
       queued,
+      xPosted,
     }, undefined, runId);
 
     console.log(

@@ -4,6 +4,7 @@ import { getSessionUser } from '@/lib/admin';
 import { voteInputSchema } from '@/lib/validators';
 import { checkRateLimit, rateLimitResponse } from '@/lib/security';
 import { VOTE_THRESHOLD } from '@/lib/constants';
+import { publishToX, formatThreatPost, formatFUDPost } from '@/lib/x-posting';
 
 export async function POST(request: NextRequest) {
   const user = await getSessionUser();
@@ -109,6 +110,25 @@ export async function POST(request: NextRequest) {
         userName: 'Community Vote',
         diff: { approvals, rejections, netScore, threshold: VOTE_THRESHOLD },
       });
+
+      // Post newly published item to X
+      const { data: publishedItem } = await supabase
+        .from(table)
+        .select('*')
+        .eq('id', targetId)
+        .single();
+
+      if (publishedItem) {
+        const content = targetType === 'threat'
+          ? formatThreatPost(publishedItem as { name: string; risk_rating?: string; severity_score?: number })
+          : formatFUDPost(publishedItem as { narrative: string; validity_score?: number });
+        await publishToX(supabase, {
+          content,
+          triggerType: 'community_publish',
+          entityType: targetType,
+          entityId: targetId,
+        });
+      }
     } else if (netScore <= -VOTE_THRESHOLD) {
       // Auto-archive — only if still under review (no-op if already transitioned)
       await supabase.from(table).update({ status: 'archived' })

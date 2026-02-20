@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-helpers';
 import { verifyCronAuth, processReEvalQueue, logMonitoringRun } from '@/lib/pipeline';
+import { publishToX, formatBIPEvaluatedPost } from '@/lib/x-posting';
 
 /**
  * GET /api/cron/process-queue
@@ -22,11 +23,40 @@ export async function GET(request: NextRequest) {
   try {
     const result = await processReEvalQueue(supabase);
 
+    // Post successful BIP evaluations to X
+    let xPosted = 0;
+    for (const item of result.results) {
+      if (item.success && item.bipNumber) {
+        // Fetch the updated BIP to get recommendation and score
+        const { data: bip } = await supabase
+          .from('bip_evaluations')
+          .select('bip_number, recommendation, necessity_score')
+          .eq('bip_number', item.bipNumber)
+          .single();
+
+        if (bip) {
+          const content = formatBIPEvaluatedPost({
+            bip_number: bip.bip_number,
+            recommendation: bip.recommendation ?? undefined,
+            necessity_score: bip.necessity_score ?? undefined,
+          });
+          const postResult = await publishToX(supabase, {
+            content,
+            triggerType: 'bip_evaluation',
+            entityType: 'bip',
+            entityId: item.bipId,
+          });
+          if (postResult.posted) xPosted++;
+        }
+      }
+    }
+
     await logMonitoringRun(supabase, 'reeval', 'completed', {
       processed: result.processed,
       succeeded: result.succeeded,
       failed: result.failed,
       skipped: result.skipped,
+      xPosted,
     }, undefined, runId);
 
     console.log(

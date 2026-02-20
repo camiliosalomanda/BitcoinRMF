@@ -3,6 +3,7 @@
 import DashboardLayout from '@/components/DashboardLayout';
 import StatCard from '@/components/StatCard';
 import SeverityBadge from '@/components/SeverityBadge';
+import RiskTrendChart from '@/components/RiskTrendChart';
 import { StatsSkeleton } from '@/components/LoadingSkeleton';
 import { useThreats } from '@/hooks/useThreats';
 import { useFUD } from '@/hooks/useFUD';
@@ -10,6 +11,7 @@ import { useBIPs } from '@/hooks/useBIPs';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useRiskMatrix } from '@/hooks/useRiskMatrix';
 import { useRisks } from '@/hooks/useRisks';
+import { useRiskTrends } from '@/hooks/useRiskTrends';
 import { getMatrixCellColor } from '@/lib/scoring';
 import { useBitcoinMetrics } from '@/hooks/useMetrics';
 import { useSocialEvidence } from '@/hooks/useSocialEvidence';
@@ -24,6 +26,7 @@ import {
   BarChart3,
   Layers,
   Twitter,
+  TrendingUp,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -36,6 +39,19 @@ export default function DashboardPage() {
   const { data: risks = [] } = useRisks();
   const { data: metrics } = useBitcoinMetrics();
   const socialEvidence = useSocialEvidence();
+  const { data: trendData = [] } = useRiskTrends(30);
+
+  // Compute stat card trends from snapshots (today vs yesterday)
+  const yesterday = trendData.length >= 2 ? trendData[trendData.length - 2]?.stats : undefined;
+  function trendFor(current: number, prev: number | undefined): { direction: 'up' | 'down' | 'neutral'; label: string } | undefined {
+    if (prev === undefined) return undefined;
+    const delta = current - prev;
+    if (delta === 0) return { direction: 'neutral', label: 'No change' };
+    return {
+      direction: delta > 0 ? 'up' : 'down',
+      label: `${delta > 0 ? '+' : ''}${delta} from yesterday`,
+    };
+  }
 
   const topThreats = [...threats]
     .sort((a, b) => b.severityScore - a.severityScore)
@@ -117,25 +133,28 @@ export default function DashboardPage() {
               value={stats.totalRisks}
               icon={AlertTriangle}
               color="#ef4444"
+              trend={trendFor(stats.totalRisks, yesterday?.totalRisks)}
             />
             <StatCard
               label="Critical/High Risks"
               value={stats.criticalHighRiskCount}
               icon={AlertTriangle}
               color="#f97316"
-              trend={stats.criticalHighRiskCount > 0 ? { direction: 'neutral', label: 'Active monitoring' } : undefined}
+              trend={trendFor(stats.criticalHighRiskCount, yesterday?.criticalHighRiskCount) || (stats.criticalHighRiskCount > 0 ? { direction: 'neutral', label: 'Active monitoring' } : undefined)}
             />
             <StatCard
               label="Vulnerabilities"
               value={stats.totalVulnerabilities}
               icon={Bug}
               color="#eab308"
+              trend={trendFor(stats.totalVulnerabilities, yesterday?.totalVulnerabilities)}
             />
             <StatCard
               label="Threats"
               value={stats.totalThreats}
               icon={Shield}
               color="#f7931a"
+              trend={trendFor(stats.totalThreats, yesterday?.totalThreats)}
             />
             <StatCard
               label="Avg Severity"
@@ -148,9 +167,25 @@ export default function DashboardPage() {
               value={stats.activeRemediations}
               icon={Wrench}
               color="#22c55e"
+              trend={trendFor(stats.activeRemediations, yesterday?.activeRemediations)}
             />
           </div>
         )}
+
+        {/* Risk Trend Chart */}
+        <div className="bg-[#111118] border border-[#2a2a3a] rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp size={14} className="text-[#f7931a]" />
+            <h2 className="text-sm font-semibold text-white">Risk Trend (30d)</h2>
+          </div>
+          {trendData.length >= 2 ? (
+            <RiskTrendChart data={trendData} />
+          ) : (
+            <div className="flex items-center justify-center h-32 text-gray-600 text-xs">
+              Collecting data — trends available after 2 days.
+            </div>
+          )}
+        </div>
 
         {/* Middle Row: Risk Matrix + Top Threats */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
