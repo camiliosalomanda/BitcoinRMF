@@ -5,7 +5,7 @@ import type { DashboardStats } from '@/types';
 
 // --- Config ---
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://bitcoinrmf.com';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://bitcoinrmf.io';
 const MAX_POSTS_PER_HOUR = 15;
 
 // --- Kill switch & auth ---
@@ -144,15 +144,31 @@ export async function publishToX(
 
 // --- Format helpers (each ≤280 chars) ---
 
+const RATING_EMOJI: Record<string, string> = {
+  CRITICAL: '\ud83d\udea8',  // siren
+  HIGH: '\u26a0\ufe0f',       // warning
+  MEDIUM: '\ud83d\udfe1',     // yellow circle
+  LOW: '\ud83d\udfe2',        // green circle
+};
+
+const REC_EMOJI: Record<string, string> = {
+  ESSENTIAL: '\u2705',        // check
+  RECOMMENDED: '\ud83d\udc4d', // thumbs up
+  OPTIONAL: '\ud83e\udd14',   // thinking
+  UNNECESSARY: '\u274c',      // x
+  HARMFUL: '\ud83d\uded1',    // stop sign
+};
+
 export function formatThreatPost(threat: {
   name: string;
   risk_rating?: string;
   severity_score?: number;
 }): string {
   const rating = threat.risk_rating || 'NEW';
+  const emoji = RATING_EMOJI[rating] || '\ud83d\udd34';
   const score = threat.severity_score ?? 0;
-  const name = truncate(threat.name, 140);
-  return `${rating} threat detected: ${name} (Score: ${score}/25)\n\n${SITE_URL}/threats\n\n#Bitcoin #Security #RiskManagement`;
+  const name = truncate(threat.name, 100);
+  return `${emoji} NEW THREAT DETECTED\n\n${name}\n\nRisk: ${rating} | Severity: ${score}/25\n\nFull analysis \u2193\n${SITE_URL}/threats\n\n#Bitcoin #Security #InfoSec`;
 }
 
 export function formatFUDPost(fud: {
@@ -160,8 +176,9 @@ export function formatFUDPost(fud: {
   validity_score?: number;
 }): string {
   const score = fud.validity_score ?? 0;
-  const narrative = truncate(fud.narrative, 150);
-  return `FUD alert: ${narrative} | Validity: ${score}%\n\n${SITE_URL}/fud\n\n#Bitcoin #FUD`;
+  const emoji = score > 50 ? '\ud83e\uddd0' : '\ud83d\udca9';
+  const narrative = truncate(fud.narrative, 100);
+  return `${emoji} FUD CHECK\n\n"${narrative}"\n\nValidity: ${score}% \u2014 ${score > 50 ? 'Has some merit' : 'Mostly nonsense'}\n\nEvidence-based breakdown \u2193\n${SITE_URL}/fud\n\n#Bitcoin #FUD`;
 }
 
 export function formatBIPChangePost(bip: {
@@ -169,7 +186,7 @@ export function formatBIPChangePost(bip: {
   oldStatus: string;
   newStatus: string;
 }): string {
-  return `BIP-${bip.bip_number} status: ${bip.oldStatus} \u2192 ${bip.newStatus}\n\n${SITE_URL}/bips\n\n#Bitcoin #BIP`;
+  return `\ud83d\udcdc BIP-${bip.bip_number} STATUS UPDATE\n\n${bip.oldStatus} \u2192 ${bip.newStatus}\n\nTrack all BIP changes \u2193\n${SITE_URL}/bips\n\n#Bitcoin #BIP`;
 }
 
 export function formatBIPEvaluatedPost(bip: {
@@ -178,8 +195,9 @@ export function formatBIPEvaluatedPost(bip: {
   necessity_score?: number;
 }): string {
   const rec = bip.recommendation || 'EVALUATED';
+  const emoji = REC_EMOJI[rec] || '\ud83d\udcca';
   const score = bip.necessity_score ?? 0;
-  return `BIP-${bip.bip_number} evaluated: ${rec} (Necessity: ${score}/100)\n\n${SITE_URL}/bips\n\n#Bitcoin #BIP`;
+  return `${emoji} BIP-${bip.bip_number} AI EVALUATION\n\nVerdict: ${rec}\nNecessity Score: ${score}/100\n\nFull risk analysis \u2193\n${SITE_URL}/bips\n\n#Bitcoin #BIP`;
 }
 
 export function formatVulnerabilityPost(vuln: {
@@ -187,26 +205,28 @@ export function formatVulnerabilityPost(vuln: {
   vulnerability_rating?: string;
 }): string {
   const rating = vuln.vulnerability_rating || 'NEW';
-  const name = truncate(vuln.name, 150);
-  return `${rating} vulnerability: ${name}\n\n${SITE_URL}/vulnerabilities\n\n#Bitcoin #Security`;
+  const emoji = RATING_EMOJI[rating] || '\ud83d\udd34';
+  const name = truncate(vuln.name, 100);
+  return `${emoji} VULNERABILITY ALERT\n\n${name}\n\nSeverity: ${rating}\n\nView details & remediation \u2193\n${SITE_URL}/vulnerabilities\n\n#Bitcoin #CVE #Security`;
 }
 
 export function formatWeeklySummaryPost(
   stats: DashboardStats,
   prevStats?: DashboardStats
 ): string {
-  let text = `Weekly Bitcoin Risk Summary:\n`;
-  text += `\u2022 ${stats.totalRisks} risks (${stats.criticalHighRiskCount} critical/high)\n`;
-  text += `\u2022 ${stats.totalThreats} threats, ${stats.totalVulnerabilities} vulns\n`;
-  text += `\u2022 ${stats.activeRemediations} remediations active\n`;
+  let text = `\ud83d\udee1\ufe0f BITCOIN RISK REPORT\n\n`;
+  text += `\ud83d\udd34 ${stats.criticalHighRiskCount} critical/high risks\n`;
+  text += `\ud83d\udcca ${stats.totalRisks} total risks tracked\n`;
+  text += `\u26a0\ufe0f ${stats.totalThreats} threats | ${stats.totalVulnerabilities} vulnerabilities\n`;
+  text += `\ud83d\udee0\ufe0f ${stats.activeRemediations} active remediations\n`;
 
   if (prevStats) {
     const delta = stats.totalRisks - prevStats.totalRisks;
-    if (delta > 0) text += `\u2022 +${delta} new risks this week\n`;
-    else if (delta < 0) text += `\u2022 ${delta} risks resolved this week\n`;
+    if (delta > 0) text += `\ud83d\udcc8 +${delta} new risks this week\n`;
+    else if (delta < 0) text += `\ud83d\udcc9 ${Math.abs(delta)} risks resolved\n`;
   }
 
-  text += `\n${SITE_URL}\n\n#Bitcoin #RiskManagement`;
+  text += `\nExplore the full dashboard \u2193\n${SITE_URL}\n\n#Bitcoin #RiskManagement #InfoSec`;
   return truncate(text, 280);
 }
 

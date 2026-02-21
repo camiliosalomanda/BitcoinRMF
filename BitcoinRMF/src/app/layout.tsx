@@ -18,6 +18,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
+    site: "@BitcoinRMF",
+    creator: "@BitcoinRMF",
     title: "Bitcoin RMF - Institutional-Grade Risk Management Framework",
     description: "Apply NIST RMF, FAIR, and STRIDE frameworks to Bitcoin's threat landscape.",
     images: ["/api/og?type=default"],
