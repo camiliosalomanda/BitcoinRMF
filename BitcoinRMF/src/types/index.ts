@@ -248,6 +248,7 @@ export interface Vulnerability {
   lastUpdated: string;
   submittedBy?: string;
   workflowStatus?: string;
+  cveId?: string | null;
 }
 
 // --- Derived Risk ---

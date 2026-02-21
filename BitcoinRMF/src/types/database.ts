@@ -274,6 +274,7 @@ export interface Database {
           status: string;
           submitted_by: string | null;
           submitted_by_name: string | null;
+          cve_id: string | null;
           date_identified: string;
           created_at: string;
           updated_at: string;
@@ -292,6 +293,7 @@ export interface Database {
           status?: string;
           submitted_by?: string | null;
           submitted_by_name?: string | null;
+          cve_id?: string | null;
           date_identified?: string;
         };
         Update: {
@@ -308,6 +310,7 @@ export interface Database {
           status?: string;
           submitted_by?: string | null;
           submitted_by_name?: string | null;
+          cve_id?: string | null;
         };
         Relationships: [];
       };
@@ -473,6 +476,7 @@ export interface Database {
           cve_id: string | null;
           processed: boolean;
           threat_id: string | null;
+          vulnerability_id: string | null;
           created_at: string;
         };
         Insert: {
@@ -487,6 +491,7 @@ export interface Database {
           cve_id?: string | null;
           processed?: boolean;
           threat_id?: string | null;
+          vulnerability_id?: string | null;
         };
         Update: {
           source?: string;
@@ -500,6 +505,7 @@ export interface Database {
           cve_id?: string | null;
           processed?: boolean;
           threat_id?: string | null;
+          vulnerability_id?: string | null;
         };
         Relationships: [];
       };

@@ -92,6 +92,13 @@ interface NVDResponse {
         cvssMetricV31?: Array<{
           cvssData: { baseSeverity: string; baseScore: number };
         }>;
+        cvssMetricV30?: Array<{
+          cvssData: { baseSeverity: string; baseScore: number };
+        }>;
+        cvssMetricV2?: Array<{
+          baseSeverity?: string;
+          cvssData?: { baseScore: number };
+        }>;
       };
     };
   }>;
@@ -109,7 +116,7 @@ function mapCVSSSeverity(severity: string): ExternalThreatSignal['severity'] {
 export async function fetchNVDSignals(since?: Date): Promise<ExternalThreatSignal[]> {
   const signals: ExternalThreatSignal[] = [];
 
-  let url = 'https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=bitcoin&resultsPerPage=20';
+  let url = 'https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=bitcoin&resultsPerPage=100';
   if (since) {
     const sinceStr = since.toISOString().replace(/\.\d+Z$/, '.000');
     url += `&lastModStartDate=${sinceStr}&lastModEndDate=${new Date().toISOString().replace(/\.\d+Z$/, '.000')}`;
@@ -126,9 +133,14 @@ export async function fetchNVDSignals(since?: Date): Promise<ExternalThreatSigna
   for (const vuln of data.vulnerabilities) {
     const cve = vuln.cve;
     const desc = cve.descriptions.find((d) => d.lang === 'en')?.value || '';
-    const cvss = cve.metrics?.cvssMetricV31?.[0];
-    const severity = cvss
-      ? mapCVSSSeverity(cvss.cvssData.baseSeverity)
+    const cvss31 = cve.metrics?.cvssMetricV31?.[0];
+    const cvss30 = cve.metrics?.cvssMetricV30?.[0];
+    const cvss2 = cve.metrics?.cvssMetricV2?.[0];
+    const rawSeverity = cvss31?.cvssData.baseSeverity
+      || cvss30?.cvssData.baseSeverity
+      || cvss2?.baseSeverity;
+    const severity = rawSeverity
+      ? mapCVSSSeverity(rawSeverity)
       : 'unknown';
 
     signals.push({

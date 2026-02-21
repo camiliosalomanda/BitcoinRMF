@@ -78,6 +78,7 @@ export interface VulnerabilityRow {
   evidence_sources: unknown;
   status: string;
   submitted_by?: string | null;
+  cve_id?: string | null;
   date_identified: string;
   created_at: string;
   updated_at: string;
@@ -212,6 +213,7 @@ export function vulnerabilityFromRow(row: VulnerabilityRow): Vulnerability {
     lastUpdated: row.updated_at,
     submittedBy: row.submitted_by || undefined,
     workflowStatus: row.status || 'published',
+    cveId: row.cve_id || null,
   };
 }
 

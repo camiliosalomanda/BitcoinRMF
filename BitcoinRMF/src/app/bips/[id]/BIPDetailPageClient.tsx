@@ -305,7 +305,14 @@ export default function BIPDetailPageClient() {
                 >
                   <div>
                     <p className="text-sm text-white">{vuln.name}</p>
-                    <p className="text-[10px] text-gray-500">Score: {vuln.vulnerabilityScore}/25</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-[10px] text-gray-500">Score: {vuln.vulnerabilityScore}/25</p>
+                      {vuln.cveId && (
+                        <span className="text-[10px] font-mono text-amber-400/80 bg-amber-400/10 px-1.5 py-0.5 rounded">
+                          {vuln.cveId}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <SeverityBadge rating={vuln.vulnerabilityRating} size="sm" />
                 </Link>
